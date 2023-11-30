@@ -20,6 +20,7 @@ const eventLogger = async (message, filename) => {
 
 
 const reqLogger = async (req, res, next) => {
+    console.log(`method:${req.method}\t origin:${req.headers.origin} \turl:${req.url}`);
     eventLogger(`method:${req.method}\t origin:${req.headers.origin} \turl:${req.url}`, "reqLog.docx");
     //call next 
     next();
