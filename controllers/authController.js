@@ -2,19 +2,41 @@ const bcrypt = require('bcrypt');
 const User = require('../model/UserModel');
 const jwt = require('jsonwebtoken');
 const subRoles = require('../config/roles_list');
+
+const checkUserNameAvailability = async (req, res, next) => {
+  const userName = req.params.userName;
+  try {
+    const result = await User.exists({ userName: userName }, { lean: true });
+    console.log(result);
+    if (!result) {
+      return res
+        .status(200)
+        .json({ message: 'Username is available', availability: true });
+    } else {
+      return res
+        .status(409)
+        .json({ message: 'Username is not available', availability: false });
+    }
+  } catch (err) {
+    console.log(err);
+    next();
+  }
+};
+
 const registerUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { userName, email, password } = req.body;
+  console.log(userName, email, password);
   //check if the user already exists
-  if (!username || !email || !password)
-    return res.json({ message: 'Provide all the fields' });
+  if (!userName || !email || !password)
+    return res.status(400).json({ message: 'Provide all the fields' });
   const foundUser = await User.findOne({ email }).lean().exec();
-  console.log(foundUser);
+  console.log(foundUser, 'Found user');
   if (foundUser) {
     return res.status(409).json({ message: 'user already exists' });
   } //conflict
   try {
     const user = await User.create({
-      username,
+      userName,
       email,
       password,
     });
@@ -38,13 +60,25 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, userName, password } = req.body;
 
   //check if the user already exists
+  console.log(email);
+  console.log(userName);
+  console.log(!email, !userName);
+
   try {
-    if (!email || !password)
-      return res.json({ message: 'Provide all the fields' });
-    const foundUser = await User.findOne({ email }).exec();
+    if (!email && !userName) {
+      return res.status(400).json({ message: 'enter email or username' });
+    }
+    if (!password) return res.status(400).json({ message: 'enter password' });
+    let foundUser;
+    if (email) {
+      foundUser = await User.findOne({ email }).exec();
+    } else {
+      foundUser = await User.findOne({ userName }).exec();
+    }
+
     console.log(foundUser);
     if (!foundUser) return res.status(404).json({ message: 'Invalid email' });
     //compare the password
@@ -171,4 +205,5 @@ module.exports = {
   loginUser,
   activateAccount,
   verifyRefreshToken,
+  checkUserNameAvailability,
 };

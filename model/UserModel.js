@@ -1,9 +1,9 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
-const { SES } = require("aws-sdk");
+const { SES } = require('aws-sdk');
 const SES_CONFIG = {
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -23,7 +23,7 @@ const UserSchema = new Schema({
   profile: {
     type: String,
     default:
-      "https://res.cloudinary.com/dcduqfohf/image/upload/v1665506783/7309681_tftx0n.jpg",
+      'https://res.cloudinary.com/dcduqfohf/image/upload/v1665506783/7309681_tftx0n.jpg',
   },
   userName: {
     type: String,
@@ -46,8 +46,8 @@ const UserSchema = new Schema({
   },
   subscription: {
     type: String,
-    enum: ["free", "premium"],
-    default: "free",
+    enum: ['free', 'premium'],
+    default: 'free',
   },
   refreshToken: String,
   activationToken: {
@@ -59,37 +59,31 @@ const UserSchema = new Schema({
     type: Boolean,
   },
 
-    hasSentActivationEmail: {
+  hasSentActivationEmail: {
     type: Boolean,
     default: false,
   },
-
-
 });
 
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
     next();
   }
-  
+
   const salt = await bcrypt.genSalt(10);
   const hashedPwd = await bcrypt.hash(this.password, salt);
   this.password = hashedPwd;
 
-
-
   if (!this.isActivated) {
     //generating token
-    this.activationToken = crypto.randomBytes(32).toString("hex");
-
+    this.activationToken = crypto.randomBytes(32).toString('hex');
   }
 
-
-  if(!this.hasSentActivationEmail){
+  if (!this.hasSentActivationEmail) {
     const params = {
       Source: process.env.AWS_SENDER,
       Destination: {
-        ToAddresses: ["jagadeeshgongidi@gmail.com"],
+        ToAddresses: ['jagadeeshgongidi@gmail.com'],
       },
       Message: {
         Body: {
@@ -98,26 +92,24 @@ UserSchema.pre("save", async function (next) {
           },
         },
         Subject: {
-          Data: "Activate Your Account",
+          Data: 'Activate Your Account',
         },
       },
       Source: process.env.AWS_SENDER,
     };
     try {
-      await AWS_SES.sendEmail(params).promise();
+      // await AWS_SES.sendEmail(params).promise();
       this.hasSentActivationEmail = true;
-      console.log("Activation email sent to:", this.email);
+      console.log('Activation email sent to:', this.email);
     } catch (err) {
-      console.error("Failed to send activation email:", err);
+      console.error('Failed to send activation email:', err);
     }
-}
-  
+  }
+
   next();
 });
 
-
-module.exports = mongoose.model("user", UserSchema);
-
+module.exports = mongoose.model('user', UserSchema);
 
 // UserSchema.post("save", async function (user, next) {
 //   if (user.isActivated) {
@@ -126,7 +118,6 @@ module.exports = mongoose.model("user", UserSchema);
 
 //   next();
 // });
-
 
 // userSchema.post('save', function(user) {
 //     if (!user.isActivated) {

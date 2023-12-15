@@ -35,7 +35,7 @@ App.get('/', (req, res) => {
 });
 
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));
-App.use(verifyJwt);
+// App.use(verifyJwt);
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.all('*', (req, res) => {
   res.status(404);
@@ -47,6 +47,7 @@ App.all('*', (req, res) => {
 });
 
 //custom error handler
+
 App.use(errorHandler);
 
 mongoose.connection.once('open', () => {
