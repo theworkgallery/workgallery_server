@@ -12,7 +12,7 @@ const getUsers = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  const { id } = req.body;
+  const { id } = req.id;
   try {
     const user = await User.findOneAndDelete({ _id: id });
     if (!user) return res.status(401).json({ error: 'User not found' });
