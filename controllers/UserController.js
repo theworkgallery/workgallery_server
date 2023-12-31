@@ -22,6 +22,8 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// update profile image
+
 module.exports = {
   getUsers,
   deleteUser,

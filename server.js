@@ -32,8 +32,11 @@ App.use(cookieParser());
 ///api/v1/auth/oauth/google
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));
 App.use('/api/v1', require('./routes/api/v1/refresh'));
+
 App.use(verifyJwt);
+App.use('/api/v1/posts', require('./routes/api/v1/postRoutes'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
+
 App.all('*', (req, res) => {
   res.status(404);
   if (req.accepts('json')) {

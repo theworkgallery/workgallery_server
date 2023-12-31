@@ -2,13 +2,8 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-
+const { SES_CONFIG } = require('../utils/constants');
 const { SES } = require('aws-sdk');
-const SES_CONFIG = {
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-};
 
 const AWS_SES = new SES(SES_CONFIG);
 const UserSchema = new Schema({

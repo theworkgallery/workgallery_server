@@ -292,6 +292,7 @@ const googleLogin = async (req, res) => {
         email: googleUser.email,
         userName: googleUser.name,
         picture: googleUser.picture,
+        isActivated: true,
       },
       { upsert: true, new: true }
     );
@@ -360,6 +361,7 @@ const githubLogin = async (req, res) => {
         picture: gitHubUser.avatar_url,
         firstName: firstName,
         lastName: lastName,
+        isActivated: true,
       },
       { upsert: true, new: true }
     );
