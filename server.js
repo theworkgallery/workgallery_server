@@ -4,13 +4,11 @@ const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3500;
 const App = express();
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
 const { reqLogger } = require('./middleware/eventLogger');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/errorHandler');
 const credentials = require('./middleware/credentials');
 const dbConnection = require('./config/dbConn');
-const verifyJwt = require('./middleware/verifyJwt');
 
 //connect to db
 dbConnection();
@@ -27,16 +25,7 @@ App.use(express.urlencoded({ extended: false }));
 //middle ware for handling json data
 App.use(express.json());
 
-//for handling cookies
-App.use(cookieParser());
-
-App.get('/', (req, res) => {
-  res.send('Hello');
-});
-
-App.use('/api/v1/auth', require('./routes/api/v1/auth'));
-// App.use(verifyJwt);
-App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
+App.use('/', require('./routes/api/v1/waitListRoute'));
 App.all('*', (req, res) => {
   res.status(404);
   if (req.accepts('json')) {
@@ -52,7 +41,7 @@ App.use(errorHandler);
 
 mongoose.connection.once('open', () => {
   console.log('Connected to Db');
-  App.listen(process.env.PORT, () => {
+  App.listen(PORT, () => {
     console.log(`App Listening on ${PORT}`);
   });
 });
