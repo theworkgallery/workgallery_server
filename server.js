@@ -32,9 +32,12 @@ App.use(cookieParser());
 ///api/v1/auth/oauth/google
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));
 App.use('/api/v1', require('./routes/api/v1/refresh'));
-App.use('/api/v1', require('./routes/api/v1/waitListRoute'));
+App.use('/api/v1/waitlist', require('./routes/api/v1/waitListRoute'));
+
 App.use(verifyJwt);
-App.use('/api/v1/posts', require('./routes/api/v1/postRoutes'));
+App.use('/api/v1/lobby', require('./routes/api/v1/lobbyRoutes'));
+App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes.js'));
+App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes.js'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 
 App.all('*', (req, res) => {
@@ -52,7 +55,7 @@ App.use(errorHandler);
 
 mongoose.connection.once('open', () => {
   console.log('Connected to Db');
-  App.listen(process.env.PORT, () => {
+  App.listen(PORT, () => {
     console.log(`App Listening on ${PORT}`);
   });
 });

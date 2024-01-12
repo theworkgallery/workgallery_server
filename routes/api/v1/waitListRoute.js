@@ -1,6 +1,8 @@
 const Router = require('express').Router();
 const WaitList = require('../../../model/WaitList');
-Router.post('/waitlist', async (req, res) => {
+Router.post('/', async (req, res) => {
+  console.log('Ree');
+  console.log(req.body);
   const { email } = req.body;
   console.log(email);
   if (!email) return res.status(400).json({ message: 'Email is required' });

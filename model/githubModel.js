@@ -1,15 +1,12 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const postSchema = new Schema(
+const gitHubScrappingSchema = new Schema(
   {
-    content: {
-      type: String,
-      required: false,
-      trim: true,
-    },
-    post: {
-      type: String,
-      trim: true,
+    repos: [],
+
+    isPrivate: {
+      type: Boolean,
+      default: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,4 +19,4 @@ const postSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model('post', postSchema);
+module.exports = mongoose.model('githubScrapped', gitHubScrappingSchema);

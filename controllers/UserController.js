@@ -22,9 +22,20 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getUser = (req, res) => {
+  const { id } = req.params;
+  const user = User.findById(id)
+    .select('-password -activationToken -hasSentActivationEmail -refreshToken')
+    .lean()
+    .exec();
+  if (!user) return res.status(401).json({ error: 'User not found' });
+  return res.json({ user });
+};
+
 // update profile image
 
 module.exports = {
   getUsers,
   deleteUser,
+  getUser,
 };

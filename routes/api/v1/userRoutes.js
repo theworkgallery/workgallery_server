@@ -4,6 +4,7 @@ router
   .route('/')
   .get(userController.getUsers)
   .delete(userController.deleteUser);
+router.route('/:id').get(userController.getUser);
 //   .put(
 //     '/:userId/profile-image',
 //     uploadImage.single('image'), // our uploadImage middleware

@@ -1,6 +1,7 @@
 const { eventLogger } = require('./eventLogger');
 
 const errorHandler = (err, req, res, next) => {
+  console.log('i have been called ');
   const statusCode = req.statusCode ? req.statusCode : 500;
   eventLogger(`${err.name} \t ${err.message}`, 'errLog.docx');
   res.status(statusCode).json({

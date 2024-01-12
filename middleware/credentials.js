@@ -3,6 +3,7 @@ const allowedOrigins = require('../config/allowedOrigins');
 //for request with fetch and when sending cookies along with requests  from front end .
 const credentials = (req, res, next) => {
   const origin = req.headers.origin;
+  console.log(origin);
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Credentials', true);
   }

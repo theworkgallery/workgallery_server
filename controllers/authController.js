@@ -112,7 +112,7 @@ const loginUser = async (req, res) => {
         accessToken,
         id: userId,
         userName: foundUser.userName,
-        picture: foundUser.picture,
+        //picture: foundUser.picture,
         email: foundUser.email,
       });
     } else {

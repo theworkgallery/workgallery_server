@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { SES_CONFIG } = require('../utils/constants');
 const { SES } = require('aws-sdk');
-
 const AWS_SES = new SES(SES_CONFIG);
 const UserSchema = new Schema({
   firstName: {
