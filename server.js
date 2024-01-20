@@ -39,6 +39,7 @@ App.use('/api/v1/lobby', require('./routes/api/v1/lobbyRoutes'));
 App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes.js'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes.js'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
+App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
 
 App.all('*', (req, res) => {
   res.status(404);

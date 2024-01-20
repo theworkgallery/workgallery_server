@@ -6,19 +6,6 @@ const { SES_CONFIG } = require('../utils/constants');
 const { SES } = require('aws-sdk');
 const AWS_SES = new SES(SES_CONFIG);
 const UserSchema = new Schema({
-  firstName: {
-    type: String,
-    trim: true,
-  },
-  lastName: {
-    type: String,
-    trim: true,
-  },
-  picture: {
-    type: String,
-    default:
-      'https://res.cloudinary.com/dcduqfohf/image/upload/v1665506783/7309681_tftx0n.jpg',
-  },
   userName: {
     type: String,
     minlength: 4,
@@ -53,7 +40,6 @@ const UserSchema = new Schema({
     default: false,
     type: Boolean,
   },
-
   hasSentActivationEmail: {
     type: Boolean,
     default: false,
