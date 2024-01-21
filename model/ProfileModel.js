@@ -11,6 +11,7 @@ const skillsSchema = new Schema({
     required: false,
   },
 });
+
 const educationSchema = new Schema({
   schoolName: {
     type: String,
@@ -35,7 +36,6 @@ const educationSchema = new Schema({
   endDate: {
     type: Date,
     required: false,
-    default: () => Date.now(),
   },
   skills: [skillsSchema],
   isPublic: {
@@ -88,7 +88,7 @@ const experienceSchema = new Schema(
 // Virtual for calculating the duration
 experienceSchema.virtual('duration').get(function () {
   if (!this.endDate) {
-    return 'Ongoing';
+    return 'Present';
   }
 
   const start = this.startDate;
@@ -118,6 +118,10 @@ const projectsSchema = new Schema({
     type: String,
     required: true,
   },
+  isPublic: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const certificationsSchema = new Schema({
@@ -131,7 +135,11 @@ const certificationsSchema = new Schema({
   },
   description: {
     type: String,
-    required: true,
+    required: false,
+  },
+  isPublic: {
+    type: Boolean,
+    default: true,
   },
 });
 
@@ -160,7 +168,7 @@ const languageSchema = new Schema({
   },
   proficiency: {
     type: String,
-    required: true,
+    required: false,
   },
 });
 const profileSchema = new Schema({

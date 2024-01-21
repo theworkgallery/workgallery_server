@@ -10,12 +10,14 @@ const AddEducation = async (req, res) => {
     current,
     skills,
   } = req.body;
-  console.log(skills);
+
   if (!schoolName || !degree || !fieldOfStudy || !startDate || !current) {
     return res.status(400).json({ message: 'Please fill all the fields' });
   }
   try {
-    const profile = await PROFILE.findOne({ user: req.user });
+    const profile = await PROFILE.findOne({ user: req.user }).select(
+      'education'
+    );
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -37,21 +39,31 @@ const AddEducation = async (req, res) => {
 };
 
 const AddExperience = async (req, res) => {
-  const { role, companyName, skills, startDate, current, description } =
-    req.body;
+  const {
+    role,
+    companyName,
+    skills,
+    startDate,
+    endDate,
+    current,
+    description,
+  } = req.body;
+  console.log(role, companyName, skills, startDate, current, description);
   if (
     !role ||
-    !skills ||
     !companyName ||
+    !skills ||
     !startDate ||
-    !description ||
-    !current
+    !current ||
+    !description
   ) {
     return res.status(400).json({ message: 'Please fill all the fields' });
   }
 
   try {
-    const profile = await PROFILE.findOne({ user: req.user });
+    const profile = await PROFILE.findOne({ user: req.user }).select(
+      'experience'
+    );
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -62,6 +74,7 @@ const AddExperience = async (req, res) => {
       startDate,
       current,
       description,
+      endDate,
     });
     await profile.save();
     return res.status(200).json(profile);
@@ -73,8 +86,12 @@ const AddExperience = async (req, res) => {
 
 const AddSkills = async (req, res) => {
   const { skills } = req.body;
+  console.log(skills);
   if (!skills) {
-    return res.status(400).json({ message: 'Please fill all the fields' });
+    return res
+      .status(400)
+      .json({ message: 'Please fill all the fields' })
+      .select('skills');
   }
   try {
     const profile = await PROFILE.findOne({ user: req.user });
@@ -82,7 +99,7 @@ const AddSkills = async (req, res) => {
       return res.status(400).json({ message: 'Profile not found' });
     }
 
-    profile.skills.unshift(skills);
+    profile.skills.unshift(...skills);
     await profile.save();
     return res.status(200).json(profile);
   } catch (error) {
@@ -91,9 +108,8 @@ const AddSkills = async (req, res) => {
   }
 };
 
-const AddProjects = async (req, res) => {
+const AddProject = async (req, res) => {
   const { title, description, link } = req.body;
-
   if (!title || !description || !link) {
     return res.status(400).json({ message: 'Please fill all the fields' });
   }
@@ -114,7 +130,7 @@ const AddProjects = async (req, res) => {
   }
 };
 
-const AddCertifications = async (req, res) => {
+const AddCertification = async (req, res) => {
   const { title, description, link } = req.body;
 
   if (!title || !description || !link) {
@@ -136,7 +152,7 @@ const AddCertifications = async (req, res) => {
   }
 };
 
-const AddAchievements = async (req, res) => {
+const AddAchievement = async (req, res) => {
   const { title, description, link } = req.body;
 
   if (!title || !description) {
@@ -149,6 +165,25 @@ const AddAchievements = async (req, res) => {
       return res.status(400).json({ message: 'Profile not found' });
     }
     profile.achievements.unshift({ title, description, link });
+    await profile.save();
+    return res.status(200).json(profile);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const AddLanguages = async (req, res) => {
+  const { languages } = req.body;
+  if (!languages) {
+    return res.status(400).json({ message: 'language is required' });
+  }
+  try {
+    const profile = await PROFILE.findOne({ user: req.user });
+    if (!profile) {
+      return res.status(400).json({ message: 'Profile not found' });
+    }
+    profile.languages.unshift(...languages);
     await profile.save();
     return res.status(200).json(profile);
   } catch (error) {
@@ -266,33 +301,17 @@ const DeleteAchievements = async (req, res) => {
   }
 };
 
-const UpdateEducation = async (req, res) => {
+const DeleteLanguage = async (req, res) => {
   const { id } = req.params;
-  const {
-    schoolName,
-    degree,
-    fieldOfStudy,
-    startDate,
-    endDate,
-    current,
-    skills,
-  } = req.body;
   try {
     const profile = await PROFILE.findOne({ user: req.user });
-
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
-    const updateIndex = profile.education.map((item) => item.id).indexOf(id);
-    profile.education[updateIndex] = {
-      schoolName,
-      degree,
-      fieldOfStudy,
-      startDate,
-      endDate,
-      current,
-      skills,
-    };
+
+    const removeIndex = profile.languages.map((item) => item.id).indexOf(id);
+    console.log(removeIndex);
+    profile.languages.splice(removeIndex, 1);
     await profile.save();
     return res.status(200).json(profile);
   } catch (error) {
@@ -301,28 +320,89 @@ const UpdateEducation = async (req, res) => {
   }
 };
 
-const UpdateExperience = async (req, res) => {
-  const { id } = req.params;
-  const { role, companyName, skills, startDate, current, description } =
-    req.body;
+const UpdateEducation = async (req, res) => {
+  const {
+    id,
+    schoolName,
+    degree,
+    fieldOfStudy,
+    startDate,
+    endDate,
+    current,
+    skills,
+    isPublic,
+  } = req.body;
+
   try {
-    const profile = await PROFILE.findOne({ user: req.user });
+    const profile = await PROFILE.findOne({ user: req.user }).select(
+      'education'
+    );
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
 
-    const updateIndex = profile.experience.map((item) => item.id).indexOf(id);
-    profile.experience[updateIndex] = {
-      role,
-      companyName,
-      skills,
-      startDate,
-      current,
-      description,
-    };
+    const updateIndex = profile.education.findIndex((edu) => edu.id === id);
+    if (updateIndex === -1) {
+      return res.status(404).json({ message: 'Education entry not found' });
+    }
+
+    const educationToUpdate = profile.education[updateIndex];
+
+    if (schoolName) educationToUpdate.schoolName = schoolName;
+    if (degree) educationToUpdate.degree = degree;
+    if (fieldOfStudy) educationToUpdate.fieldOfStudy = fieldOfStudy;
+    if (startDate) educationToUpdate.startDate = startDate;
+    if (endDate) educationToUpdate.endDate = endDate;
+    if (current !== undefined) educationToUpdate.current = current;
+    if (skills) educationToUpdate.skills.push(...skills);
+    if (isPublic !== undefined)
+      educationToUpdate.isPublic = !educationToUpdate.isPublic;
     await profile.save();
-    return res.status(200).json(profile);
+    return res.status(200).json(profile.education);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const UpdateExperience = async (req, res) => {
+  const {
+    id,
+    role,
+    companyName,
+    skills,
+    startDate,
+    current,
+    description,
+    endDate,
+    isPublic,
+  } = req.body;
+  try {
+    const profile = await PROFILE.findOne({ user: req.user }).select(
+      'experience'
+    );
+    console.log(profile);
+    if (!profile) {
+      return res.status(400).json({ message: 'Profile not found' });
+    }
+    const updateIndex = profile.experience.findIndex((exp) => exp.id === id);
+    if (updateIndex === -1) {
+      return res.status(404).json({ message: 'Experience entry not found' });
+    }
+
+    const experienceToUpdate = profile.experience[updateIndex];
+
+    if (role) experienceToUpdate.role = role;
+    if (companyName) experienceToUpdate.companyName = companyName;
+    if (skills) experienceToUpdate.skills.push(...skills);
+    if (startDate) experienceToUpdate.startDate = startDate;
+    if (endDate) experienceToUpdate.endDate = endDate;
+    if (current !== undefined) experienceToUpdate.current = current;
+    if (description) experienceToUpdate.description = description;
+    if (isPublic !== undefined) experienceToUpdate.isPublic = !isPublic;
+    await profile.save();
+    return res.status(200).json(profile.experience);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -349,7 +429,7 @@ const UpdateSkills = async (req, res) => {
   }
 };
 
-const UpdateProjects = async (req, res) => {
+const UpdateProject = async (req, res) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
@@ -413,19 +493,21 @@ module.exports = {
   AddEducation,
   AddExperience,
   AddSkills,
-  AddProjects,
-  AddCertifications,
-  AddAchievements,
+  AddProject,
+  AddCertification,
+  AddAchievement,
+  AddLanguages,
   DeleteEducation,
   DeleteExperience,
   DeleteSkills,
   DeleteProjects,
   DeleteCertifications,
   DeleteAchievements,
+  DeleteLanguage,
   UpdateEducation,
   UpdateExperience,
   UpdateSkills,
-  UpdateProjects,
+  UpdateProject,
   UpdateCertifications,
   UpdateAchievements,
 };
