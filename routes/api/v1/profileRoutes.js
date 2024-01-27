@@ -45,5 +45,5 @@ Router.put('/update-skills', profileController.UpdateSkills);
 Router.put('/update-projects', profileController.UpdateProject);
 Router.put('/update-achievements', profileController.UpdateAchievements);
 Router.put('/update-certifications', profileController.UpdateCertifications);
-
+Router.put('/update-profile', profileController.UpdateProfileData);
 module.exports = Router;

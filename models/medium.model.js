@@ -18,4 +18,4 @@ const MediumScrappingSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model('mediumScrappedDB', MediumScrappingSchema);
+module.exports = mongoose.model('mediumProfile', MediumScrappingSchema);

@@ -17,6 +17,10 @@ const educationSchema = new Schema({
     type: String,
     required: true,
   },
+  grade: {
+    type: String,
+    required: true,
+  },
   degree: {
     type: String,
     required: true,
@@ -172,57 +176,12 @@ const languageSchema = new Schema({
   },
 });
 const profileSchema = new Schema({
-  linkedInUserName: {
-    type: String,
-    default: false,
-  },
-  firstName: {
-    type: String,
-    trim: true,
-  },
-  lastName: {
-    type: String,
-    trim: true,
-  },
-  githubUserName: {
-    type: String,
-    default: false,
-  },
-  mediumUserName: {
-    type: String,
-    default: false,
-  },
-  figmaUserName: {
-    type: String,
-    default: false,
-  },
-  picture: {
-    type: String,
-    default:
-      'https://res.cloudinary.com/dcduqfohf/image/upload/v1665506783/7309681_tftx0n.jpg',
-  },
   education: [educationSchema],
   experience: [experienceSchema],
   skills: [skillsSchema],
   projects: [projectsSchema],
   certifications: [certificationsSchema],
   achievements: [achievementsSchema],
-  about: {
-    type: String,
-    default: false,
-  },
-  headline: {
-    type: String,
-    default: false,
-  },
-  location: {
-    type: String,
-    default: false,
-  },
-  behanceUserName: {
-    type: String,
-    default: false,
-  },
   languages: [languageSchema],
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -231,4 +190,4 @@ const profileSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('profileDb', profileSchema);
+module.exports = mongoose.model('Profile', profileSchema);

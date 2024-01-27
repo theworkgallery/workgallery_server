@@ -1,4 +1,4 @@
-const User = require('../model/UserModel');
+const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const subRoles = require('../config/roles_list');
 const verifyRefreshToken = async (req, res) => {
@@ -12,7 +12,10 @@ const verifyRefreshToken = async (req, res) => {
       .json({ error: 'Unauthorized Refresh token not found' });
   const refreshToken = cookies?.jwt;
   console.log(refreshToken);
-  const foundUser = await User.findOne({ refreshToken }).lean().exec();
+  const foundUser = await User.findOne({ refreshToken })
+    .select('_id role userName email subscription')
+    .lean()
+    .exec();
   console.log('Found User', foundUser);
   if (!foundUser) return res.sendStatus(403);
   //verify the refresh token

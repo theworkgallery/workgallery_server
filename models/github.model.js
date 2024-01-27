@@ -19,4 +19,4 @@ const gitHubScrappingSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model('githubScrapped', gitHubScrappingSchema);
+module.exports = mongoose.model('githubProfile', gitHubScrappingSchema);

@@ -30,25 +30,29 @@ App.use(express.json());
 //for handling cookies
 App.use(cookieParser());
 ///api/v1/auth/oauth/google
+App.use('/upload', require('./routes/api/v1/postRoutes'));
+
+App.use('/server-status', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));
 App.use('/api/v1', require('./routes/api/v1/refresh'));
-App.use('/api/v1/waitlist', require('./routes/api/v1/waitListRoute'));
 
 App.use(verifyJwt);
 App.use('/api/v1/lobby', require('./routes/api/v1/lobbyRoutes'));
-App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes.js'));
+App.use('/api/v1/posts', require('./routes/api/v1/galleryRoutes.js'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes.js'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
 
-App.all('*', (req, res) => {
-  res.status(404);
-  if (req.accepts('json')) {
-    res.status(404).json({ error: 'File not found' });
-  } else {
-    res.send('File not found ');
-  }
-});
+// App.all('*', (req, res) => {
+//   res.status(404);
+//   if (req.accepts('json')) {
+//     res.status(404).json({ error: 'File not found' });
+//   } else {
+//     res.send('File not found');
+//   }
+// });
 
 //custom error handler
 

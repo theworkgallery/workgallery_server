@@ -1,16 +1,15 @@
-const LinkedInDb = require('../model/linkedInModel');
-
-const Profile = require('../model/ProfileModel');
+const LinkedInDb = require('../models/linkedin.model');
+const Profile = require('../models/profile.model');
 const axios = require('axios');
 const LINKEDIN_SCRAPPER_URL = 'http://127.0.0.1:5000/scrape_linkedin_profiles';
 const GIT_SCRAPPER_URL = 'http://127.0.0.1:5000/scrape_github_profiles';
 const MEDIUM_SCRAPPER_URL = 'http://127.0.0.1:5000/scrape_medium_profiles';
-const MEDIUM_DB = require('../model/mediumModel');
-const GIT_DB = require('../model/githubModel');
+const MEDIUM_DB = require('../models/medium.model');
+const GIT_DB = require('../models/github.model');
 
 const getLinkedInData = async (req, res) => {
   const refresh = req.query.refresh;
-  const id = req.user;
+  const id = req.userId;
   try {
     const profile = await Profile.findOne({ user: id });
     if (!profile.linkedInUserName) {
@@ -66,7 +65,7 @@ const getLinkedInData = async (req, res) => {
 const getMediumData = async (req, res) => {
   const refresh = req.query.refresh;
   console.log('refresh', refresh);
-  const id = req.user;
+  const id = req.userId;
   try {
     const profile = await Profile.findOne({ user: id });
     if (!profile.mediumUserName) {
@@ -115,7 +114,7 @@ const getMediumData = async (req, res) => {
 
 const getGitHubData = async (req, res) => {
   const refresh = req.query.refresh;
-  const id = req.user;
+  const id = req.userId;
   try {
     const profile = await Profile.findOne({ user: id });
     if (!profile.githubUserName) {

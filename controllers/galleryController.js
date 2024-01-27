@@ -1,7 +1,12 @@
-const Gallery = require('../model/galleryModel');
-const { createPresignedPost, deletePost } = require('../utils/s3');
-const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+const dayjs = require('dayjs');
+const relativeTime = require('dayjs/plugin/relativeTime');
+dayjs.extend(relativeTime);
+
+const Gallery = require('../models/post.model');
+const User = require('../models/user.model');
+
 //keeping the file in memory
+
 // function sanitizeFile(file, cb) {
 //   // Define the allowed extension
 //   const fileExts = ['.png', '.jpg', '.jpeg', '.gif'];
@@ -22,21 +27,7 @@ const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 //   }
 // }
 
-exports.deletePost = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const post = await Gallery.findById(postId).exec();
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-    await deletePost({ key: post.key, bucket_name: BUCKET_NAME });
-    await Gallery.findByIdAndDelete(postId).exec();
-    res.status(200).json({ message: 'Post deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-exports.getAllPosts = async (req, res) => {
+const getAllPosts = async (req, res) => {
   try {
     const posts = await Gallery.find({ isPrivate: false }).lean().exec();
     res.status(200).json(posts);
@@ -47,51 +38,26 @@ exports.getAllPosts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-exports.createPost = async (req, res) => {
-  console.log(req.body);
-  const userId = req?.user;
-  try {
-    let { key, content_type } = req.body;
-    key = 'public' + key;
-    console.log(key);
 
-    const data = await createPresignedPost({ key, contentType: content_type });
-    console.log(data);
-    const post = await Gallery.create({
-      post: data?.fileLink,
-      user: userId,
-      key: key,
-      isPrivate: false,
-    });
-    console.log(post, 'Post');
-    return res.send({
-      status: 'success',
-      data,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-exports.updatePost = async (req, res) => {
+const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content_type } = req.body;
-    const post = await Gallery.findById(postId).exec();
+    const { content } = req.body;
+    const { fileType, fileUrl, fileKey } = req;
+
+    const post = await Gallery.findById(postId)
+      .select('content fileUrl key')
+      .exec();
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    // await deletePost({ key: post.key, bucket_name: BUCKET_NAME });
-    const data = await createPresignedPost({
-      key: post.key,
-      contentType: content_type,
-    });
-    post.post = data?.fileLink;
 
-    // const updatedPost = await Post.findByIdAndUpdate(
-    //   postId,
-    //   { content, image, video },
-    //   { new: true }
-    // );
+    if (content) post.content = content;
+    if (fileUrl) post.fileUrl = fileUrl;
+    if (fileType) post.fileType = fileType;
+    if (fileKey) post.key = fileKey;
+
+    await post.save();
 
     res.status(200).json({ postData: data });
   } catch (error) {
@@ -99,7 +65,7 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-// module.exports = {
-//   getAllPosts,
-//   AddNewPost,
-// };
+module.exports = {
+  getAllPosts,
+  updatePost,
+};
