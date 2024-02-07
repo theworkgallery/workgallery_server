@@ -1,23 +1,23 @@
 const mongoose = require('mongoose');
 
 const socialsSchema = new mongoose.Schema({
-  linkedInUserName: {
+  linkedin: {
     type: String,
     default: false,
   },
-  githubUserName: {
+  github: {
     type: String,
     default: false,
   },
-  mediumUserName: {
+  medium: {
     type: String,
     default: false,
   },
-  figmaUserName: {
+  figma: {
     type: String,
     default: false,
   },
-  behanceUserName: {
+  behance: {
     type: String,
     default: false,
   },
@@ -28,4 +28,4 @@ const socialsSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('SocialProfile', tokenSchema);
+module.exports = mongoose.model('SocialProfile', socialsSchema);

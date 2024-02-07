@@ -1,0 +1,5 @@
+#When deleting post make sure to use remove() to trigger remove hook in schema 
+
+
+#use next method to pass the error dont send the error directly to the client
+#invoke error method to add errors

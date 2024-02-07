@@ -36,26 +36,34 @@ async function createPresignedPost({ key, contentType }) {
 }
 
 async function AwsUploadFile({ fileBuffer, fileName, mimeType, bucketName }) {
-  const UploadParams = {
-    Bucket: bucketName || BUCKET_NAME,
-    Key: fileName,
-    Body: fileBuffer,
-    ContentType: mimeType,
-  };
-  const fileLink = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
-  const result = await S3_CLIENT.send(new PutObjectCommand(UploadParams));
-  console.log(result, 'resultINuploadFun');
-  console.log(fileLink);
-  return { result, fileLink };
+  try {
+    const UploadParams = {
+      Bucket: bucketName || BUCKET_NAME,
+      Key: fileName,
+      Body: fileBuffer,
+      ContentType: mimeType,
+    };
+    const fileLink = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
+    const result = await S3_CLIENT.send(new PutObjectCommand(UploadParams));
+    return { result, fileLink };
+  } catch (error) {
+    console.log(error);
+    return { error: error.message };
+  }
 }
 
-async function deletePost({ FileName, contentType, bucket_name }) {
-  const deleteParams = {
-    Bucket: bucket_name,
-    Key: FileName,
-  };
+async function AwsDeleteFile({ FileName, contentType, bucket_name }) {
+  try {
+    const deleteParams = {
+      Bucket: bucket_name || BUCKET_NAME,
+      Key: FileName,
+    };
 
-  return S3_CLIENT.send(new DeleteObjectCommand(deleteParams));
+    return S3_CLIENT.send(new DeleteObjectCommand(deleteParams));
+  } catch (error) {
+    console.log(error);
+    return { error: error.message };
+  }
 }
 
 async function getObjectSignedUrl(key) {
@@ -73,7 +81,7 @@ async function getObjectSignedUrl(key) {
 }
 module.exports = {
   createPresignedPost,
-  deletePost,
+  AwsDeleteFile,
   getObjectSignedUrl,
   AwsUploadFile,
 };

@@ -1,5 +1,5 @@
 const User = require('../models/user.model');
-
+const Profile = require('../models/profile.model');
 /**
  * @route GET /users/moderator
  */

@@ -2,10 +2,15 @@ const User = require('../models/user.model');
 const Relationship = require('../models/relationship.model');
 const Post = require('../models/post.model');
 const Community = require('../models/community.model');
+const Profile = require('../models/profile.model');
 const dayjs = require('dayjs');
 const duration = require('dayjs/plugin/duration');
 const mongoose = require('mongoose');
+const LinkedIn = require('../models/linkedin.model');
 dayjs.extend(duration);
+const { generateFileName } = require('../utils/functions');
+const { AwsUploadFile } = require('../utils/s3');
+const sharp = require('sharp');
 
 /**
  * Retrieves up to 5 public users that the current user is not already following,
@@ -608,37 +613,57 @@ const DeleteLanguage = async (req, res) => {
   }
 };
 
-const UpdateProfileData = async (req, res) => {
+const UpdateProfileData = async (req, res, next) => {
+  console.log('here');
+  console.log(req.body);
+  console.log(req?.headers);
   const { firstName, lastName, about, languages, location, skills } = req.body;
+  const userId = req.userId;
+  let filePath;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
-    if (!profile) {
-      return res
-        .status(400)
-        .json({ message: 'Profile not found' })
-        .select(
-          'firstName',
-          'lastName',
-          'about',
-          'languages',
-          'location',
-          'skills'
-        );
+    const FoundUser = await User.findById(req.userId)
+      .select('firstName lastName location about avatar')
+      .exec();
+    const file = req.files[0];
+    console.log(file);
+    const type = file?.mimetype?.split('/')[0];
+    if (file && type == 'image') {
+      const getFileName = generateFileName(file.mimetype);
+      const fileNameWithKey = 'public/images/' + getFileName;
+      // file.buffer = await sharp(file.buffer)
+      //   .resize({ height: 350, width: 350, fit: 'contain' })
+      //   .toBuffer();
+      const { fileLink } = await AwsUploadFile({
+        fileBuffer: file.buffer,
+        fileName: fileNameWithKey,
+        mimeType: type,
+      });
+      if (!FoundUser) throw new Error('User not found');
+      FoundUser.avatar.fileUrl = fileLink;
+      FoundUser.avatar.edited = true;
     }
-    if (firstName) profile.firstName = firstName;
-    if (lastName) profile.lastName = lastName;
-    if (about) profile.about = about;
-    if (languages) profile.languages.push(...languages);
-    if (location) profile.location = location;
-    if (skills) profile.skills.push(...skills);
+    if (!FoundUser) throw new Error('User not found');
+    let profile = await Profile.findOne({ user: req.userId }).exec();
+
+    if (!profile) {
+      profile = await Profile.create({
+        user: req.userId,
+      });
+    }
+    if (firstName) FoundUser.firstName = firstName;
+    if (lastName) FoundUser.lastName = lastName;
+    if (about) FoundUser.about = about;
+
+    if (languages && languages.length > 0) profile.languages.push(...languages);
+    if (location) FoundUser.location = location;
+    if (skills && skills.length > 0) profile.skills.push(...skills);
     await profile.save();
-    return res
-      .status(200)
-      .json(profile)
-      .select('about', 'languages', 'location', 'skills');
+    const user = await FoundUser.save();
+    console.log(user);
+    return res.status(200).json('updated');
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
@@ -740,7 +765,6 @@ const UpdateSkills = async (req, res) => {
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
-
     const updateIndex = profile.skills.map((item) => item.id).indexOf(id);
     profile.skills[updateIndex] = skills;
     await profile.save();
@@ -811,7 +835,60 @@ const UpdateAchievements = async (req, res) => {
   }
 };
 
+// const addAvatar = async (req, res, next) => {
+//   try {
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// };
+
+const getUserData = async (req, res, next) => {
+  const userId = req.userId;
+
+  try {
+    const userData = await User.findById(userId)
+      .select('userName avatar title about firstName lastName')
+      .lean()
+      .exec();
+    if (!userData) return res.status(400).json({ message: 'User not found' });
+    return res.json(userData);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+const getFullUserProfile = async (req, res, next) => {
+  const userId = req.userId;
+  try {
+    const linkedInData = await LinkedIn.findOne({ user: userId })
+      .select('education experience')
+      .lean()
+      .exec();
+    const profileData = await Profile.findOne({ user: userId })
+      .select(
+        'education experience skills projects certifications achievements languages'
+      )
+      .lean()
+      .exec();
+    profileData.education = [...linkedInData.education];
+    profileData.experience = [...linkedInData.experience];
+
+    console.log(profileData, 'ProfileData');
+    if (!profileData) {
+      return res.status(400).json({ message: 'Profile not found' });
+    }
+    return res.status(200).json(profileData);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 module.exports = {
+  getUserData,
+  getFullUserProfile,
   AddEducation,
   AddExperience,
   AddSkills,

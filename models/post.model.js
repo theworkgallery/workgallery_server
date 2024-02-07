@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { deletePost } = require('../utils/s3');
+const { AwsDeleteFile } = require('../utils/s3');
 const bucketName = process.env.AWS_BUCKET_NAME;
 const postSchema = new Schema(
   {
@@ -20,7 +20,7 @@ const postSchema = new Schema(
     community: {
       type: Schema.Types.ObjectId,
       ref: 'Community',
-      required: true,
+      required: false,
     },
     key: {
       type: String,
@@ -29,6 +29,10 @@ const postSchema = new Schema(
     isPrivate: {
       type: Boolean,
       default: true,
+    },
+    collection: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Collection',
     },
     comments: [
       {
@@ -54,17 +58,22 @@ const postSchema = new Schema(
 );
 postSchema.index({ content: 'text' });
 postSchema.index({ user: 1, isPrivate: -1 });
+
+//automatically delete file from s3 when post is deleted
+
+//ERROR:Works with remove method only
+
 postSchema.pre('remove', async function (next) {
   try {
     if (this.fileUrl) {
-      await deletePost({ FileName: this.key, bucket_name: bucketName });
+      await AwsDeleteFile({ FileName: this.key, bucket_name: bucketName });
     }
 
-    await this.model('Comment').deleteMany({ _id: this.comments });
+    // await this.model('Comment').deleteMany({ _id: this.comments });
 
-    await this.model('Report').deleteOne({
-      post: this._id,
-    });
+    // await this.model('Report').deleteOne({
+    //   post: this._id,
+    // });
 
     await this.model('User').updateMany(
       {

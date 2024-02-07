@@ -40,7 +40,9 @@ App.use('/api/v1', require('./routes/api/v1/refresh'));
 
 App.use(verifyJwt);
 App.use('/api/v1/lobby', require('./routes/api/v1/lobbyRoutes'));
-App.use('/api/v1/posts', require('./routes/api/v1/galleryRoutes.js'));
+App.use('/api/v1/post', require('./routes/api/v1/postRoutes.js'));
+App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes.js'));
+App.use('/api/v1/collections', require('./routes/api/v1/collectionRoutes'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes.js'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));

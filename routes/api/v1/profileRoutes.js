@@ -1,5 +1,5 @@
 const Router = require('express').Router();
-
+const fileUpload = require('../../../middleware/post/fileUpload');
 const profileController = require('../../../controllers/ProfileController');
 
 //   AddEducation,
@@ -23,6 +23,9 @@ const profileController = require('../../../controllers/ProfileController');
 //   UpdateCertifications,
 //   UpdateAchievements,
 
+Router.get('/', profileController.getUserData);
+Router.get('/user', profileController.getFullUserProfile);
+// Router.post('/avatar', fileUpload, profileController.addAvatar);
 Router.post('/add-education', profileController.AddEducation);
 Router.post('/add-experience', profileController.AddExperience);
 Router.post('/add-skills', profileController.AddSkills);
@@ -45,5 +48,5 @@ Router.put('/update-skills', profileController.UpdateSkills);
 Router.put('/update-projects', profileController.UpdateProject);
 Router.put('/update-achievements', profileController.UpdateAchievements);
 Router.put('/update-certifications', profileController.UpdateCertifications);
-Router.put('/update-profile', profileController.UpdateProfileData);
+Router.put('/update-profile', fileUpload, profileController.UpdateProfileData);
 module.exports = Router;

@@ -2,7 +2,7 @@ const dayjs = require('dayjs');
 const relativeTime = require('dayjs/plugin/relativeTime');
 dayjs.extend(relativeTime);
 const formatCreatedAt = require('../utils/timeConverter');
-const { deletePost } = require('../utils/s3');
+const { AwsDeleteFile } = require('../utils/s3');
 const Post = require('../models/post.model');
 const Community = require('../models/community.model');
 const Comment = require('../models/comment.model');
@@ -10,7 +10,9 @@ const User = require('../models/user.model');
 const Relationship = require('../models/relationship.model');
 const Report = require('../models/report.model');
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
-
+const sharp = require('sharp');
+const { AwsUploadFile } = require('../utils/s3');
+const { generateFileName } = require('../utils/functions');
 //UTIL FUNCTIONS
 const formatComments = (comments) =>
   comments.map((comment) => ({
@@ -330,7 +332,7 @@ const deletePostInMongo = async (req, res) => {
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    await deletePost({ key: post.key, bucket_name: BUCKET_NAME });
+    //aws file is automatically removed via preset up hook
     await post.remove();
     res.status(200).json({ message: 'Post deleted successfully' });
   } catch (error) {
@@ -357,7 +359,6 @@ const getPost = async (req, res) => {
 
     const report = await findReportByPostAndUser(postId, userId);
     post.isReported = !!report;
-
     res.status(200).json(post);
   } catch (error) {
     res.status(500).json({
@@ -368,65 +369,96 @@ const getPost = async (req, res) => {
 
 //TODO:NEXT Version
 const createPost = async (req, res) => {
-  try {
-    const { communityId, content, isCommunity } = req.body;
-    const { userId, file, fileUrl, fileType, fileKey } = req;
-    if (isCommunity) {
-      //for community posts
-      const community = await Community.findOne({
-        _id: { $eq: communityId },
-        members: { $eq: userId },
-      });
-
-      if (!community) {
-        return res.status(401).json({
-          message: 'Unauthorized to post in this community',
-        });
-      }
-      const newPost = new Post({
-        user: userId,
-        community: communityId,
-        content,
-        fileUrl: fileUrl ? fileUrl : null,
-        fileType: fileType ? fileType : null,
-      });
-
-      const savedPost = await newPost.save();
-      const postId = savedPost._id;
-
-      const post = await Post.findById(postId)
-        .populate('user', 'name avatar')
-        .populate('community', 'name')
-        .lean();
-
-      post.createdAt = dayjs(post.createdAt).fromNow();
-
-      res.json(post);
-    }
-
-    //for individual posts
-
-    const newPost = new Post({
-      user: userId,
-      content,
-      fileUrl: fileUrl ? fileUrl : null,
-      key: fileKey,
-    });
-
-    const savedPost = await newPost.save();
-    const postId = savedPost._id;
-
-    const post = await Post.findById(postId)
-      .populate('user', 'name avatar')
-      .lean();
-    post.createdAt = dayjs(post.createdAt).fromNow();
-
-    res.json(post);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error creating post',
+  const { userId } = req;
+  const { content = 'This is a editable content' } = req.body;
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'No files uploaded',
     });
   }
+  const uploadResponses = [];
+  try {
+    for (const file of req.files) {
+      const getFileName = generateFileName(file.mimetype);
+      const fileNameWithKey = file.mimetype.startsWith('video/')
+        ? 'public/videos/' + getFileName
+        : 'public/images/' + getFileName;
+      if (file.mimetype.startsWith('image/')) {
+        file.buffer = await sharp(file.buffer)
+          .resize({ height: 600, width: 500, fit: 'contain' })
+          .toBuffer();
+      }
+
+      const { fileLink } = await AwsUploadFile({
+        fileBuffer: file.buffer,
+        fileName: fileNameWithKey,
+        mimeType: file.mimetype,
+      });
+
+      const newPost = new Post({
+        user: userId,
+        content,
+        fileUrl: fileLink,
+        key: fileNameWithKey,
+      });
+      await newPost.save();
+      // const postId = savedPost._id;
+
+      // const post = await Post.findById(postId)
+      //   .populate('user', 'firstName lastName avatar')
+      //   .lean();
+      // post.createdAt = dayjs(post.createdAt).fromNow();
+      const type = file.mimetype.split('/')[0];
+      uploadResponses.push({
+        name: getFileName,
+        url: fileLink,
+        type,
+      });
+    }
+    console.log(uploadResponses);
+    res.status(200).json({ files: uploadResponses });
+  } catch (error) {
+    uploadResponses.push({
+      error: error.message,
+    });
+    console.log(error.message);
+    return res.status(400).json(uploadResponses);
+  }
+
+  // const { communityId, content, isCommunity = false } = req.body;
+  // const { userId, file, fileUrl, fileType, fileKey } = req;
+  // if (isCommunity) {
+  //   //for community posts
+  //   const community = await Community.findOne({
+  //     _id: { $eq: communityId },
+  //     members: { $eq: userId },
+  //   });
+
+  //   if (!community) {
+  //     return res.status(401).json({
+  //       message: 'Unauthorized to post in this community',
+  //     });
+  //   }
+  //   const newPost = new Post({
+  //     user: userId,
+  //     community: communityId,
+  //     content,
+  //     fileUrl: fileUrl ? fileUrl : null,
+  //     fileType: fileType ? fileType : null,
+  //   });
+
+  //   const savedPost = await newPost.save();
+  //   const postId = savedPost._id;
+
+  //   const post = await Post.findById(postId)
+  //     .populate('user', 'name avatar')
+  //     .populate('community', 'name')
+  //     .lean();
+
+  //   post.createdAt = dayjs(post.createdAt).fromNow();
+
+  //   res.json(post);
 };
 
 const confirmPost = async (req, res) => {
@@ -741,9 +773,38 @@ const getPublicPosts = async (req, res) => {
   }
 };
 
+const updatePost = async (req, res, next) => {
+  try {
+    const { postId } = req.params; // Post ID from URL
+    const { content } = req.body; // Data for updating the post
+    try {
+      if (!content) throw new Error('Provide content');
+
+      const updateData = {
+        content: content,
+      };
+      const updatedPost = await Post.findByIdAndUpdate(postId, updateData, {
+        new: true,
+      });
+
+      if (!updatedPost) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+
+      res.json(updatedPost);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 module.exports = {
   getPost,
   getHomeFeed,
+
   getPosts,
   createPost,
   getCommunityPosts,
@@ -759,4 +820,5 @@ module.exports = {
   getSavedPosts,
   getPublicPosts,
   getFollowingUsersPosts,
+  updatePost,
 };

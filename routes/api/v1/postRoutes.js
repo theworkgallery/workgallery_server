@@ -18,6 +18,7 @@ const {
   unsavePost,
   getSavedPosts,
   clearPendingPosts,
+  updatePost,
 } = require('../../../controllers/postController');
 const {
   postValidator,
@@ -47,10 +48,10 @@ router.get('/', getHomeFeed);
 
 router.use(likeSaveLimiter);
 
-router.patch('/:id/save', savePost);
-router.patch('/:id/unsave', unsavePost);
-router.patch('/:id/like', likePost);
-router.patch('/:id/unlike', unlikePost);
+// router.patch('/:id/save', savePost);
+// router.patch('/:id/unsave', unsavePost);
+// router.patch('/:id/like', likePost);
+// router.patch('/:id/unlike', unlikePost);
 
 //delete any post
 router.delete('/:id', deletePostInMongo);
@@ -72,13 +73,15 @@ router.post(
   '/',
   createPostLimiter,
   fileUpload,
-  postValidator,
-  validatorHandler,
+  // postValidator,
+  // validatorHandler,
   // analyzeContent,
   // processPost,
   // postConfirmation,
   createPost
 );
+
+router.put('/posts/:postId', updatePost);
 
 module.exports = router;
 

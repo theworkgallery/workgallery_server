@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const { SES_CONFIG } = require('../utils/constants');
 const { SES } = require('aws-sdk');
 const AWS_SES = new SES(SES_CONFIG);
+
 const UserSchema = new Schema(
   {
     userName: {
@@ -22,16 +23,36 @@ const UserSchema = new Schema(
       type: String,
       trim: true,
     },
-    refreshToken: {
-      type: String,
-      required: true,
-    },
+
     avatar: {
-      type: String,
+      fileUrl: {
+        type: String,
+        trim: true,
+      },
+      edited: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    title: {
+      text: {
+        type: String,
+        trim: true,
+      },
+      edited: {
+        type: Boolean,
+        default: false,
+      },
     },
     about: {
-      type: String,
-      trim: true,
+      text: {
+        type: String,
+        trim: true,
+      },
+      edited: {
+        type: Boolean,
+        default: false,
+      },
     },
     email: {
       type: String,
@@ -45,6 +66,9 @@ const UserSchema = new Schema(
       required: false,
       minlength: 6,
       trim: true,
+    },
+    refreshToken: {
+      type: String,
     },
     subscription: {
       type: String,
@@ -84,7 +108,6 @@ const UserSchema = new Schema(
       type: String,
       trim: true,
     },
-    // refreshToken: String,
     // activationToken: {
     //   type: String,
     //   default: null,
@@ -105,6 +128,7 @@ const UserSchema = new Schema(
 UserSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
+
 UserSchema.index({ firstName: 'text', lastName: 'text' });
 // userSchema.index({ userName: 'text' });
 UserSchema.pre('save', async function (next) {

@@ -11,13 +11,22 @@ const SuspiciousLogin = require('../models/suspiciousLogin.model');
 const geoip = require('geoip-lite');
 const { saveLogInfo } = require('../middleware/logger/logInfo');
 const formatCreatedAt = require('../utils/timeConverter');
-
+const LOG_TYPE = {
+  SIGN_IN: 'sign in',
+  LOGOUT: 'logout',
+};
 const types = {
   NO_CONTEXT_DATA: 'no_context_data',
   MATCH: 'match',
   BLOCKED: 'blocked',
   SUSPICIOUS: 'suspicious',
   ERROR: 'error',
+};
+
+const LEVEL = {
+  INFO: 'info',
+  ERROR: 'error',
+  WARN: 'warn',
 };
 
 const MESSAGE = {
@@ -157,6 +166,7 @@ const registerUser = async (req, res) => {
       password,
     });
     await user.save();
+    console.log(user)
     if (user) {
       const { _id, email, username } = user;
       return res.status(201).json({
@@ -185,10 +195,6 @@ const loginUser = async (req, res) => {
   );
 
   //check if the user already exists
-  console.log(email, 'Email');
-  console.log(userName, 'username');
-
-  console.log(password, 'password');
   try {
     if (!email && !userName) {
       return res.status(400).json({ message: 'enter email or username' });

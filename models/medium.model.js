@@ -1,8 +1,21 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const postSchema = new Schema({
+  description: {
+    type: String,
+    default: '',
+  },
+  title: {
+    type: String,
+  },
+  isGallery: {
+    type: Boolean,
+    default: false,
+  },
+});
 const MediumScrappingSchema = new Schema(
   {
-    posts: [],
+    posts: [postSchema],
     isPrivate: {
       type: Boolean,
       default: true,
@@ -19,3 +32,4 @@ const MediumScrappingSchema = new Schema(
 );
 
 module.exports = mongoose.model('mediumProfile', MediumScrappingSchema);
+module.exports.postSchema = postSchema;

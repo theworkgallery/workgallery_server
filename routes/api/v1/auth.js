@@ -16,8 +16,8 @@ const accessTokenController = require('../../../controllers/accessTokenControlle
 
 router.post(
   '/register',
-  signUpSignInLimiter,
-  sendVerificationEmail,
+  // signUpSignInLimiter,
+  // sendVerificationEmail,
   authController.registerUser
 );
 router.post(
@@ -25,7 +25,7 @@ router.post(
   signUpSignInLimiter,
   requestIp.mw(),
   useragent.express(),
-  sendLoginVerificationEmail,
+  // sendLoginVerificationEmail,
   authController.loginUser
 );
 router.get('/logout', authController.logoutUser);

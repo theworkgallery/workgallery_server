@@ -1,15 +1,37 @@
 const Post = require('../models/post.model');
+const mongoose = require('mongoose');
+const GitHub = require('../models/github.model');
+const Medium = require('../models/medium.model');
+const Collection = require('../models/collection.model');
+const { generateFileName } = require('../utils/functions');
+const { AwsUploadFile } = require('../utils/s3');
+const sharp = require('sharp');
 async function getLobbyPosts(req, res) {
+  console.log('im here');
   try {
     const { userId } = req;
-
     const posts = await Post.aggregate([
       // Match posts based on criteria
-      { $match: { isPrivate: true, user: mongoose.Types.ObjectId(userId) } },
-
+      {
+        $match: { isPrivate: true, user: new mongoose.Types.ObjectId(userId) },
+      },
       // Project fields (select only 'content' and 'fileUrl')
-      { $project: { content: 1, fileUrl: 1 } },
+      { $project: { content: 1, fileUrl: 1, _id: 0 } },
     ]);
+
+    const mediumPosts = await Medium.aggregate([
+      // Match posts based on criteria
+      {
+        $match: {
+          isPrivate: true,
+          user: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      // Project fields (select only 'content' and 'fileUrl')
+      { $project: { posts: 1, _id: 0 } },
+    ]);
+
+    console.log(mediumPosts);
 
     if (posts && posts.length > 0) {
       return res.status(200).json(posts);
@@ -17,7 +39,41 @@ async function getLobbyPosts(req, res) {
       return res.status(404).json({ message: 'No posts found' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+}
+
+async function getGitHubRepos(req, res, next) {
+  const userId = req.userId;
+  try {
+    const GitHubRepos = await GitHub.aggregate([
+      {
+        $match: { user: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $project: {
+          filteredRepos: {
+            $filter: {
+              input: '$repos',
+              as: 'repo',
+              cond: { $eq: ['$$repo.isGallery', false] },
+            },
+          },
+          // You can include other fields here if needed
+        },
+      },
+      {
+        $unwind: '$filteredRepos',
+      },
+      {
+        $replaceRoot: { newRoot: '$filteredRepos' },
+      },
+    ]);
+    return res.status(200).json(GitHubRepos);
+  } catch (err) {
+    console.log(err);
+    next();
   }
 }
 
@@ -35,7 +91,7 @@ async function pushToGallery(req, res) {
     // Update the document using findByIdAndUpdate
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
-      { isPrivate: true },
+      { isPrivate: false },
       { new: true } // This option returns the updated document
     );
 
@@ -81,8 +137,95 @@ async function updateLobbyPost(req, res) {
   }
 }
 
+async function CreateNewCollection(req, res, next) {
+  const userId = req.userId;
+  const { title, description } = req.body;
+  const file = req.files[0];
+  const type = file?.mimetype?.split('/')[0];
+
+  try {
+    if (file && type == 'image') {
+      const getFileName = generateFileName(file.mimetype);
+      const fileNameWithKey = 'public/images/' + getFileName;
+      // file.buffer = await sharp(file.buffer)
+      //   .resize({ height: 350, width: 350, fit: 'contain' })
+      //   .toBuffer();
+      const { fileLink } = await AwsUploadFile({
+        fileBuffer: file.buffer,
+        fileName: fileNameWithKey,
+        mimeType: type,
+      });
+      if (!FoundUser) throw new Error('User not found');
+      FoundUser.avatar.fileUrl = fileLink;
+      FoundUser.avatar.edited = true;
+    }
+    const foundCollection = Collection.findOne({ user: userId }).exec();
+    if (foundCollection) {
+      foundCollection.collections.unshift({
+        title,
+        description,
+        'coverImage.fileUrl': coverImage,
+        'coverImage.key': key,
+      });
+    }
+    const newCollection = await Collection.create({
+      user: userId,
+    });
+    newCollection.collections.unshift({
+      title,
+      description,
+      'coverImage.fileUrl': coverImage,
+      'coverImage.key': key,
+    });
+    return res.status(201).json(newCollection);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+}
+
+async function AddToCollection(req, res, next) {
+  const userId = req.userId;
+  const { collectionId, postId } = req.body;
+  try {
+    const collection = await Collection.findOneAndUpdate(
+      { _id: collectionId, user: userId },
+      { $push: { posts: postId } },
+      { new: true }
+    );
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+    return res.status(200).json(collection);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+}
+
+// async function addToRepoToGallery(req, res) {
+//   const { id } = req.params;
+//   const userId = req?.userId;
+//   try {
+
+//     const Repo= await GitHub.
+
+//     if (!updatedRepo) {
+//       return res.status(404).json({ message: 'Repo not found' });
+//     }
+
+//     return res.status(200).json({
+//       status: 'success',
+//       data: updatedRepo,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// }
+
 module.exports = {
   getLobbyPosts,
   pushToGallery,
   updateLobbyPost,
+  getGitHubRepos,
 };
