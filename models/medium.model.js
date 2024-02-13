@@ -8,18 +8,26 @@ const postSchema = new Schema({
   title: {
     type: String,
   },
+  fileUrl: {
+    type: String,
+  },
+  tags: [],
+  sourceUrl: {
+    type: String,
+  },
   isGallery: {
     type: Boolean,
     default: false,
+  },
+  editedData: {
+    title: String,
+    description: String,
+    fileUrl: String,
   },
 });
 const MediumScrappingSchema = new Schema(
   {
     posts: [postSchema],
-    isPrivate: {
-      type: Boolean,
-      default: true,
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

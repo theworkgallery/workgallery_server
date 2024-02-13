@@ -22,6 +22,7 @@ const CollectionSchema = new Schema(
       type: String,
       default: '',
     },
+    addedData: [],
     key: String,
     posts: [
       {
@@ -33,4 +34,4 @@ const CollectionSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Collection', CollectionSchema);
+module.exports = mongoose.model('UserCollection', CollectionSchema);

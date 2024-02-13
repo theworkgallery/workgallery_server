@@ -1,9 +1,10 @@
-const Collection = require('../models/collection.model');
+const UserCollection = require('../models/collection.model');
 const { generateFileName } = require('../utils/functions');
 const { AwsUploadFile, AwsDeleteFile } = require('../utils/s3');
 const sharp = require('sharp');
 const Post = require('../models/post.model');
 
+const mongoose = require('mongoose');
 const uploadImage = async ({ type, file }) => {
   if (!file || type !== 'image') {
     return { fileLink: '', fileNameWithKey: '', error: null }; // Early return for non-image types or missing file
@@ -37,7 +38,7 @@ const uploadImage = async ({ type, file }) => {
 };
 
 const createCollection = async (req, res, next) => {
-  const user = req.userId;
+  const user = new mongoose.Types.ObjectId(req?.userId);
   const { description, title } = req.body;
   if (!description || !title)
     return res
@@ -52,15 +53,15 @@ const createCollection = async (req, res, next) => {
       file,
     });
 
-    const newCollection = new Collection({
+    const newCollection = new UserCollection({
       title,
       description,
       fileUrl: fileLink,
       key: fileNameWithKey,
       user, // Assuming this is the ID of the user creating the collection
     });
-    await newCollection.save();
-    res.status(201).json('created');
+    const UpdatedCollection = await newCollection.save();
+    res.status(201).json(UpdatedCollection);
   } catch (error) {
     console.log(error);
     next(error);
@@ -78,7 +79,7 @@ const updateCollection = async (req, res, next) => {
       file,
     });
 
-    const updatedCollection = await Collection.findByIdAndUpdate(
+    const updatedCollection = await UserCollection.findByIdAndUpdate(
       collectionId,
       { $set: { title, description, fileUrl: fileLink, key: fileNameWithKey } },
       { new: true } // This option returns the document after update
@@ -97,7 +98,8 @@ const updateCollection = async (req, res, next) => {
 const deleteCollection = async (req, res, next) => {
   const { collectionId } = req.params;
   try {
-    const deletedCollection = await Collection.findByIdAndDelete(collectionId);
+    const deletedCollection =
+      await UserCollection.findByIdAndDelete(collectionId);
 
     if (!deletedCollection) {
       throw new Error('collection not found it may have already deleted');
@@ -117,16 +119,17 @@ const deleteCollection = async (req, res, next) => {
 const getCollection = async (req, res, next) => {
   const { collectionId } = req.params;
   try {
-    const collection = await Collection.findById(collectionId)
+    const collections = await UserCollection.findById(collectionId)
       .populate('posts')
       .lean()
+      .select('addedData title description fileUrl')
       .exec();
+    console.log(collections);
 
-    if (!collection) {
-      throw new Error('Collection not found');
-    }
+    if (!collections)
+      return res.status(404).json({ message: 'collection not found' });
 
-    res.json(collection);
+    return res.status(200).json(collections);
   } catch (error) {
     console.error(error);
     next(error);
@@ -138,15 +141,12 @@ const listCollectionsByUser = async (req, res, next) => {
   // Assuming you're passing the user ID in the URL
   let user = userId || req.userId;
   try {
-    const collections = await Collection.find({ user: user })
+    const collections = await UserCollection.find({ user: user })
       .select('fileUrl title description')
       .lean()
       .exec();
     console.log(collections);
-    if (collections.length === 0) {
-      req.statusCode = 404;
-      throw new Error('No collections found');
-    }
+
     res.json(collections);
   } catch (error) {
     console.error(error);
@@ -197,7 +197,7 @@ const addPostToCollection = async (req, res, next) => {
       const savedPost = await newPost.save();
 
       // Optionally, add the post ID to the collection's posts array
-      await Collection.findByIdAndUpdate(collectionId, {
+      await UserCollection.findByIdAndUpdate(collectionId, {
         $push: { posts: savedPost._id },
       });
     }
@@ -220,7 +220,7 @@ const removePostFromCollection = async (req, res) => {
       throw new Error('Post not found');
     }
     // Optionally, remove the post ID from the collection's posts array
-    await Collection.findByIdAndUpdate(collectionId, {
+    await UserCollection.findByIdAndUpdate(collectionId, {
       $pull: { posts: postId },
     });
   } catch (err) {
@@ -231,15 +231,19 @@ const removePostFromCollection = async (req, res) => {
 
 const getPostsByCollection = async (req, res, next) => {
   const { collectionId } = req.params;
+  console.log('im here');
   try {
     const collectionWithPosts =
-      await Collection.findById(collectionId).populate('posts');
+      await UserCollection.findById(collectionId).populate('posts');
+    console.log(collectionWithPosts);
+
     if (!collectionWithPosts) {
       req.statusCode = 404;
       throw new Error('Collection not found');
     }
 
-    res.json(collectionWithPosts.posts);
+    console.log(dataArr, 'dataArr');
+    return res.status(200).json(collectionWithPosts);
   } catch (err) {
     console.log(err);
     next(err);

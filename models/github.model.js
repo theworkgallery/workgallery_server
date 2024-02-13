@@ -10,7 +10,7 @@ const repoSchema = new Schema({
     type: Number,
     default: 0,
   },
-  name: {
+  title: {
     type: String,
   },
   readme: {
@@ -19,22 +19,30 @@ const repoSchema = new Schema({
   stars: {
     type: Number,
   },
-  url: {
+  sourceUrl: {
     type: String,
+  },
+  id: {
+    type: Number,
   },
   isGallery: {
     type: Boolean,
     default: false,
+  },
+  editedData: {
+    title: String,
+    description: String,
+    fileUrl: String,
+    isModified: {
+      type: Boolean,
+      default: false,
+    },
   },
 });
 
 const gitHubScrappingSchema = new Schema(
   {
     repos: [repoSchema],
-    isPrivate: {
-      type: Boolean,
-      default: true,
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

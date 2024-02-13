@@ -6,8 +6,11 @@ const MEDIUM_SCRAPPER_URL = 'http://127.0.0.1:5000/scrape_medium_profiles';
 const MEDIUM_DB = require('../models/medium.model');
 const GIT_DB = require('../models/github.model');
 const SocialProfile = require('../models/socials.model');
+const UserCollection = require('../models/collection.model');
 const User = require('../models/user.model');
 const { ArrayFilter } = require('../utils/functions');
+const { AwsUploadFile } = require('../utils/s3');
+const { uploadImage } = require('./collectionController');
 const mongoose = require('mongoose');
 const getLinkedInData = async (req, res, next) => {
   const refresh = req.query.refresh;
@@ -148,6 +151,7 @@ const getMediumData = async (req, res, next) => {
         url: MEDIUM_SCRAPPER_URL,
       });
 
+      if (!newData) return res.status(200).json('failed to fetch data');
       // Merge and check for changes
       const mergedPosts = newData
         .map((newPost) => {
@@ -224,67 +228,28 @@ const getGitHubData = async (req, res, next) => {
     if (!profile.github) {
       throw new Error('github user name not found');
     }
-    console.log(refresh === 'true');
-    // if (refresh === 'true') {
-    //   //for refresh
-    //   const data = await getWebScrappingData({
-    //     userName: profile.githubUserName,
-    //     url: GIT_SCRAPPER_URL,
-    //   });
-    //   console.log(data, 'data git');
-    //   const update = {
-    //     $set: {
-    //       repos: data || [],
-    //     },
-    //   };
-
-    //   const githubData = await GIT_DB.findOneAndUpdate({ user: id }, update, {
-    //     new: true,
-    //     upsert: true,
-    //   }).exec(); //new returns the data after update
-    //   return res.status(201).json(githubData);
-    // }
 
     if (refresh === 'true') {
-      // Retrieve isGallery repos
-      // const existingGalleryRepos = await GIT_DB.find(
-      //   { user: id },
-      //   { repos: { $elemMatch: { isGallery: true } } }
-      // ).exec();
-
+      const foundUser = await GIT_DB.findOne({ user: id })
+        .select('user')
+        .lean()
+        .exec();
+      if (!foundUser) {
+        return res.json({ message: 'User not found' });
+      }
       const existingGalleryRepos = await GIT_DB.aggregate([
-        // {
-        //   $unwind: '$repos',
-        // },
-        // {
-        //   $match: { 'repos.isGallery': true },
-        // },
-        // {
-        //   $project: {
-        //     repos: 1,
-        //     _id: 0,
-        //   },
-        // },
-
-        // {
-        //   $project: {
-        //     repos: {
-        //       $filter: {
-        //         input: '$repos',
-        //         as: 'repo',
-        //         cond: { $eq: ['$$repo.isGallery', true] },
-        //       },
-        //     },
-        //     // Include other fields of the parent document as needed
-        //   },
-        // },
         {
           $project: {
             filteredRepos: {
               $filter: {
                 input: '$repos',
                 as: 'repo',
-                cond: { $eq: ['$$repo.isGallery', true] },
+                cond: {
+                  $or: [
+                    { $eq: ['$$repo.isGallery', true] },
+                    { $eq: ['$$repo.editedData.isModified', true] },
+                  ],
+                },
               },
             },
             // Include other fields of the parent document as needed
@@ -299,30 +264,32 @@ const getGitHubData = async (req, res, next) => {
       ]);
 
       const galleryRepoMap = new Map(
-        existingGalleryRepos.map((repo) => [repo.name, repo])
+        existingGalleryRepos.map((repo) => [repo.id, repo])
       );
+      console.log(galleryRepoMap, 'galleryRepoMap');
       //Fetch new GitHub data
       const newData = await getWebScrappingData({
         userName: profile.github,
         url: GIT_SCRAPPER_URL,
       });
-
+      console.log(newData);
+      if (!newData) return res.status(400).json('failed to fetch data');
       // Merge and check for changes
-      const mergedRepos = newData
-        .map((newRepo) => {
-          const existingRepo = galleryRepoMap.get(newRepo.name);
-          if (existingRepo && existingRepo.readme === newRepo.readme) {
-            // If no significant changes, mark the new repo as isGallery
-            return { ...newRepo, isGallery: true };
-          } else if (existingRepo) {
-            // If there are changes, add both versions
-            return [existingRepo, newRepo];
-          }
-          return newRepo;
-        })
-        .flat(); // Flatten in case of adding both versions
-
-      //Update database with merged data
+      const mergedRepos = newData.map((newRepo) => {
+        const existingRepo = galleryRepoMap.get(newRepo.id);
+        console.log(existingRepo);
+        if (existingRepo) {
+          // Merge isGallery and editedData from existingRepo into newRepo
+          return {
+            ...newRepo, // New scraped data
+            isGallery: existingRepo.isGallery, // Retain existing isGallery status
+            editedData: existingRepo.editedData, // Retain any existing editedData
+          };
+        }
+        // For new repos that don't exist in the database, return them as is
+        return newRepo;
+      });
+      console.log(mergedRepos);
       const update = { $set: { repos: mergedRepos } };
       const { repos } = await GIT_DB.findOneAndUpdate({ user: id }, update, {
         new: true,
@@ -331,15 +298,10 @@ const getGitHubData = async (req, res, next) => {
         .select('repos')
         .lean()
         .exec();
-      //console.log(mergedRepos);
+      //console.log(mergedRepos)
 
-      const filtered = ArrayFilter({
-        arr: repos,
-        property: 'isGallery',
-        condition: (isGallery) => isGallery === false,
-      });
-
-      return res.status(201).json(filtered);
+      console.log(repos, 'mergedRepos In db');
+      return res.status(201).json(mergedRepos);
     }
 
     const GIT_REPOS = await GIT_DB.findOne({ user: id })
@@ -347,13 +309,7 @@ const getGitHubData = async (req, res, next) => {
       .lean()
       .exec();
     if (GIT_REPOS) {
-      const FilteredRepos = ArrayFilter({
-        arr: GIT_REPOS.repos,
-        property: 'isGallery',
-        condition: (isGallery) => isGallery === false,
-      });
-      console.log(FilteredRepos);
-      return res.status(200).json(FilteredRepos);
+      return res.status(200).json(GIT_REPOS.repos);
     }
 
     const data = await getWebScrappingData({
@@ -366,11 +322,6 @@ const getGitHubData = async (req, res, next) => {
       repos: data || [],
     });
 
-    // newGithubData.repos = ArrayFilter({
-    //   arr: newGithubData?.repos,
-    //   property: 'isGallery',
-    //   condition: (isGallery) => isGallery === false,
-    // });
     console.log(newGithubData?.repos);
     return res.status(200).json(newGithubData.repos);
   } catch (err) {
@@ -455,7 +406,7 @@ const getWebScrappingData = async ({ userName, url }) => {
   try {
     const response = await axios.post(
       url,
-      { profiles: [userName] },
+      { profile: userName },
       {
         headers: {
           'Content-Type': 'application/json',
@@ -483,9 +434,15 @@ function saniTizeEducation(education) {
 }
 
 const getSingleRepositoryData = async (req, res, next) => {
-  const repoId = req.params.id;
-  console.log(repoId);
+  const repoID = req.params.id;
+  // if (!repoId && !repoId.length > 23) {
+  //   return res.json({ message: 'invalid id' });
+  // }
+
+  // console.log(repoId, 'Repoid');
   const userId = req.userId;
+  console.log(userId);
+  const repoId = new mongoose.Types.ObjectId(repoID);
   try {
     // const repo = await GIT_DB.findOne({ user: userId })
     //   .select('repos')
@@ -495,38 +452,24 @@ const getSingleRepositoryData = async (req, res, next) => {
     //   return res.status(404).json({ message: 'Repository not found' });
     // }
     // const foundRepo = repo.repos.find((each) => each._id == repoId);
-    // if (!foundRepo) {
-    //   return res.status(404).json({ message: 'Repository not found' });
-    // }
-    // return res.status(200).json(foundRepo);
-    const objectIdRepoId = new mongoose.Types.ObjectId(repoId);
-
-    const result = await GIT_DB.aggregate([
-      // Match the user first to narrow down the search
-      { $match: { user: userId } },
-      // Unwind the repos array to treat each element as a separate document
-      { $unwind: '$repos' },
-      // Match the specific repo by its id
-      { $match: { 'repos._id': objectIdRepoId } },
-      // Optionally, project the fields you want to return
+    const foundRepo = await GIT_DB.aggregate([
       {
-        $project: {
-          _id: '$repos._id',
-          name: '$repos.name',
-          description: '$repos.description',
-          // Add any other repo fields you need here
-        },
+        $match: { 'repos._id': repoId },
+      },
+      {
+        $unwind: '$repos',
+      },
+      {
+        $match: { 'repos._id': repoId },
+      },
+      {
+        $replaceRoot: { newRoot: '$repos' },
       },
     ]);
-
-    // Since aggregate returns an array, check if we have any results
-    if (result.length === 0) {
+    if (!foundRepo) {
       return res.status(404).json({ message: 'Repository not found' });
     }
-    console.log(result);
-
-    // Return the first (and should be only) matched repo
-    return res.status(200).json(result[0]);
+    return res.status(200).json(foundRepo[0]);
   } catch (err) {
     console.log(err);
     next(err);
@@ -544,7 +487,7 @@ const AddSocialPlatforms = async (req, res, next) => {
       .exec();
     console.log(profile, 'FoundProfile');
     if (!profile) {
-      platforms.user = userId;
+      platforms.user = new mongoose.Types.ObjectId(userId);
       const newProfile = await SocialProfile.create(platforms);
       console.log(newProfile, 'new profile');
       return res.json(newProfile);
@@ -555,7 +498,6 @@ const AddSocialPlatforms = async (req, res, next) => {
         if (profile[key] !== undefined || profile[key] !== 'false') {
           // Make sure we only update existing fields
           profile[key] = platforms[key];
-          console.log(platforms[key], 'Updated');
         }
       });
       const updatedProfile = await profile.save(); // Save the updated document
@@ -633,15 +575,148 @@ const getSingleMediumPostData = async (req, res, next) => {
   }
 };
 
+const addGitRepoToGallery = async (req, res, next) => {
+  const { id } = req.params;
+  const user = req.userId;
+
+  try {
+    // Retrieve the profile and ensure execution
+    const foundProfile = await GIT_DB.findOne({ user: user }).exec();
+
+    // Check if the profile was not found
+    if (!foundProfile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    // Find the specific repository using MongoDB ObjectId for accurate comparison
+    const repoId = new mongoose.Types.ObjectId(id); // Convert string ID to ObjectId
+    let foundRepoIndex = foundProfile.repos.findIndex((repo) =>
+      repo._id.equals(repoId)
+    );
+
+    // Check if the repo was not found
+    if (foundRepoIndex === -1) {
+      return res.status(404).json({ message: 'Repo not found' });
+    }
+
+    // Toggle the isGallery value for the found repository
+    foundProfile.repos[foundRepoIndex].isGallery =
+      !foundProfile.repos[foundRepoIndex].isGallery;
+
+    // Save the changes to the document
+    await foundProfile.save();
+
+    // Respond with the updated isGallery status of the repository
+    return res
+      .status(200)
+      .json({ Gallery: foundProfile.repos[foundRepoIndex].isGallery });
+  } catch (err) {
+    console.error(err); // Log the error to the console for debugging
+    return next(err); // Pass the error to the next middleware (error handler)
+  }
+};
+
+const UpdateGitRepo = async (req, res, next) => {
+  console.log('im here');
+  const { id } = req.params;
+  const { title, description } = req.body;
+  const user = req.userId;
+
+  try {
+    // Retrieve the profile and ensure execution
+    const foundProfile = await GIT_DB.findOne({ user: user }).exec();
+    // Check if the profile was not found
+    if (!foundProfile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+    const file = req?.files[0];
+    const type = file?.mimetype?.split('/')[0];
+    const { fileLink, fileNameWithKey, error } = await uploadImage({
+      type,
+      file,
+    });
+
+    if (!file || !description || !title) {
+      return res
+        .status(400)
+        .json({ message: 'file, title or description are required' });
+    }
+
+    // Find the specific repository using MongoDB ObjectId for accurate comparison
+    const repoId = new mongoose.Types.ObjectId(id); // Convert string ID to ObjectId
+    let foundRepoIndex = foundProfile.repos.findIndex((repo) =>
+      repo._id.equals(repoId)
+    );
+
+    // Check if the repo was not found
+    if (foundRepoIndex === -1) {
+      return res.status(404).json({ message: 'Repo not found' });
+    }
+
+    // Toggle the isGallery value for the found repository
+    if (fileLink)
+      foundProfile.repos[foundRepoIndex].editedData.fileUrl = fileLink;
+    if (title) foundProfile.repos[foundRepoIndex].editedData.title = title;
+    if (description)
+      foundProfile.repos[foundRepoIndex].editedData.description = description;
+    foundProfile.repos[foundRepoIndex].editedData.isModified = true;
+    // Save the changes to the document
+    await foundProfile.save();
+    // Respond with the updated isGallery status of the repository
+    return res.status(200).json({ message: 'updated' });
+  } catch (err) {
+    console.error(err); // Log the error to the console for debugging
+    return next(err); // Pass the error to the next middleware (error handler)
+  }
+};
+
+const AddRepoToCollection = async (req, res, next) => {
+  console.log('im here');
+  const { repoid, collectionId } = req.params;
+  const user = req.userId;
+  try {
+    const foundProfile = await GIT_DB.findOne({ user: user }).exec();
+    if (!foundProfile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+    const repoId = new mongoose.Types.ObjectId(repoid);
+    let foundRepoIndex = foundProfile.repos.findIndex((repo) =>
+      repo._id.equals(repoId)
+    );
+
+    if (foundRepoIndex === -1) {
+      return res.status(404).json({ message: 'Repo not found' });
+    }
+    const result = await UserCollection.findByIdAndUpdate(
+      collectionId,
+      {
+        $push: { addedData: foundProfile.repos[foundRepoIndex] },
+      },
+      {
+        new: true,
+      }
+    );
+    console.log(result);
+
+    return res.status(200).json({ message: 'Added to collection' });
+  } catch (err) {
+    console.error(err);
+    return next(err);
+  }
+};
+
 module.exports = {
   getLinkedInData,
   getGitHubData,
   getMediumData,
   updateGithubUserName,
   updateMediumUserName,
+  UpdateGitRepo,
   updateLinkedInUserName,
   getSingleRepositoryData,
   AddSocialPlatforms,
   getSingleMediumPostData,
   getAllSocialProfiles,
+  addGitRepoToGallery,
+  AddRepoToCollection,
 };

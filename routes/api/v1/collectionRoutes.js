@@ -1,6 +1,9 @@
 const collectionController = require('../../../controllers/collectionController');
 const FileUpload = require('../../../middleware/post/fileUpload');
 const router = require('express').Router();
+const {
+  AddRepoToCollection,
+} = require('../../../controllers/WebscrapperController');
 // Define routes
 router.post('/', FileUpload, collectionController.createCollection);
 router.put('/:collectionId', FileUpload, collectionController.updateCollection);
@@ -19,6 +22,7 @@ router.post(
   FileUpload,
   collectionController.addPostToCollection
 );
+router.put('/:collectionId/github/:repoid', AddRepoToCollection);
 
 router.delete(
   '/:collectionId/posts/:postId',

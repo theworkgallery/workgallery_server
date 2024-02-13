@@ -133,11 +133,12 @@ const checkUserNameAvailability = async (req, res, next) => {
       if (!result) {
         return res
           .status(200)
-          .json({ message: 'Username is available', availability: true });
+          .json({ message: 'Username is available 😊', availability: true });
       } else {
-        return res
-          .status(409)
-          .json({ message: 'Username is not available', availability: false });
+        return res.status(409).json({
+          message: 'Username is not available 😒',
+          availability: false,
+        });
       }
     } else {
       res.json({ message: 'Username does not match the criteria' });
@@ -148,40 +149,63 @@ const checkUserNameAvailability = async (req, res, next) => {
   }
 };
 
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   const { userName, email, password } = req.body;
   console.log(userName, email, password);
   //check if the user already exists
-  if (!userName || !email || !password)
-    return res.status(400).json({ message: 'Provide all the fields' });
-  const foundUser = await User.findOne({ email }).select('email').lean().exec();
-  console.log(foundUser, 'Found user');
-  if (foundUser) {
-    return res.status(409).json({ message: 'user already exists' });
-  } //conflict
+
   try {
-    const user = await User.create({
+    if (!userName || !email || !password)
+      return res.status(400).json({ message: 'Provide all the fields' });
+    const foundUser = await User.findOne({ email })
+      .select('email')
+      .lean()
+      .exec();
+    console.log(foundUser, 'Found user');
+    if (foundUser) {
+      return res.status(409).json({ message: 'user already exists' });
+    } //conflict
+    const CreatedUser = await User.create({
       userName,
       email,
       password,
     });
-    await user.save();
-    console.log(user)
-    if (user) {
-      const { _id, email, username } = user;
+    if (CreatedUser) {
+      const userId = CreatedUser._id.toString();
+      const accessToken = Token.createAccessToken(
+        userId,
+        CreatedUser.subscription
+      );
+      const refreshToken = Token.createRefreshToken(userId);
+      //save the refresh token in Db
+      CreatedUser.refreshToken = refreshToken;
+      //send refresh token as a cookie
+
+      const result = await CreatedUser.save();
+      res.cookie('jwt', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+      });
+
+      //TODO: secure: true, add this in pro
+      //sending authorzation
       return res.status(201).json({
-        status: 'success',
-        data: {
-          _id,
-          email,
-          username,
-        },
+        accessToken,
+        id: userId,
+        userName: CreatedUser.userName,
+        //picture: foundUser.picture,
+        status: true,
+        email: CreatedUser.email,
       });
     }
+    return res
+      .status(400)
+      .json({ message: 'something went wrong try again later', status: false });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: err.message });
-    throw new Error(err.message);
+    next(err);
   }
 };
 

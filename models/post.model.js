@@ -30,9 +30,9 @@ const postSchema = new Schema(
       type: Boolean,
       default: true,
     },
-    collection: {
+    collections: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Collection',
+      ref: 'UserCollection',
     },
     comments: [
       {

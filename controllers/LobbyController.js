@@ -2,7 +2,7 @@ const Post = require('../models/post.model');
 const mongoose = require('mongoose');
 const GitHub = require('../models/github.model');
 const Medium = require('../models/medium.model');
-const Collection = require('../models/collection.model');
+const UserCollection = require('../models/collection.model');
 const { generateFileName } = require('../utils/functions');
 const { AwsUploadFile } = require('../utils/s3');
 const sharp = require('sharp');
@@ -137,71 +137,71 @@ async function updateLobbyPost(req, res) {
   }
 }
 
-async function CreateNewCollection(req, res, next) {
-  const userId = req.userId;
-  const { title, description } = req.body;
-  const file = req.files[0];
-  const type = file?.mimetype?.split('/')[0];
+// async function CreateNewCollection(req, res, next) {
+//   const userId = req.userId;
+//   const { title, description } = req.body;
+//   const file = req.files[0];
+//   const type = file?.mimetype?.split('/')[0];
 
-  try {
-    if (file && type == 'image') {
-      const getFileName = generateFileName(file.mimetype);
-      const fileNameWithKey = 'public/images/' + getFileName;
-      // file.buffer = await sharp(file.buffer)
-      //   .resize({ height: 350, width: 350, fit: 'contain' })
-      //   .toBuffer();
-      const { fileLink } = await AwsUploadFile({
-        fileBuffer: file.buffer,
-        fileName: fileNameWithKey,
-        mimeType: type,
-      });
-      if (!FoundUser) throw new Error('User not found');
-      FoundUser.avatar.fileUrl = fileLink;
-      FoundUser.avatar.edited = true;
-    }
-    const foundCollection = Collection.findOne({ user: userId }).exec();
-    if (foundCollection) {
-      foundCollection.collections.unshift({
-        title,
-        description,
-        'coverImage.fileUrl': coverImage,
-        'coverImage.key': key,
-      });
-    }
-    const newCollection = await Collection.create({
-      user: userId,
-    });
-    newCollection.collections.unshift({
-      title,
-      description,
-      'coverImage.fileUrl': coverImage,
-      'coverImage.key': key,
-    });
-    return res.status(201).json(newCollection);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-}
+//   try {
+//     if (file && type == 'image') {
+//       const getFileName = generateFileName(file.mimetype);
+//       const fileNameWithKey = 'public/images/' + getFileName;
+//       // file.buffer = await sharp(file.buffer)
+//       //   .resize({ height: 350, width: 350, fit: 'contain' })
+//       //   .toBuffer();
+//       const { fileLink } = await AwsUploadFile({
+//         fileBuffer: file.buffer,
+//         fileName: fileNameWithKey,
+//         mimeType: type,
+//       });
+//       if (!FoundUser) throw new Error('User not found');
+//       FoundUser.avatar.fileUrl = fileLink;
+//       FoundUser.avatar.edited = true;
+//     }
+//     const foundCollection = Collection.findOne({ user: userId }).exec();
+//     if (foundCollection) {
+//       foundCollection.collections.unshift({
+//         title,
+//         description,
+//         'coverImage.fileUrl': coverImage,
+//         'coverImage.key': key,
+//       });
+//     }
+//     const newCollection = await Collection.create({
+//       user: userId,
+//     });
+//     newCollection.collections.unshift({
+//       title,
+//       description,
+//       'coverImage.fileUrl': coverImage,
+//       'coverImage.key': key,
+//     });
+//     return res.status(201).json(newCollection);
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// }
 
-async function AddToCollection(req, res, next) {
-  const userId = req.userId;
-  const { collectionId, postId } = req.body;
-  try {
-    const collection = await Collection.findOneAndUpdate(
-      { _id: collectionId, user: userId },
-      { $push: { posts: postId } },
-      { new: true }
-    );
-    if (!collection) {
-      return res.status(404).json({ message: 'Collection not found' });
-    }
-    return res.status(200).json(collection);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-}
+// async function AddToCollection(req, res, next) {
+//   const userId = req.userId;
+//   const { collectionId, postId } = req.body;
+//   try {
+//     const collection = await Collection.findOneAndUpdate(
+//       { _id: collectionId, user: userId },
+//       { $push: { posts: postId } },
+//       { new: true }
+//     );
+//     if (!collection) {
+//       return res.status(404).json({ message: 'Collection not found' });
+//     }
+//     return res.status(200).json(collection);
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// }
 
 // async function addToRepoToGallery(req, res) {
 //   const { id } = req.params;
