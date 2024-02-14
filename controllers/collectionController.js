@@ -45,8 +45,8 @@ const createCollection = async (req, res, next) => {
       .status(400)
       .json({ message: 'Title and description are required' });
   try {
-    const file = req?.files[0];
-    const type = file?.mimetype?.split('/')[0];
+    const file = req?.files[0] || null;
+    const type = file?.mimetype?.split('/')[0] || null;
     console.log(file);
     const { fileLink, fileNameWithKey, error } = await uploadImage({
       type,
@@ -61,7 +61,7 @@ const createCollection = async (req, res, next) => {
       user, // Assuming this is the ID of the user creating the collection
     });
     const UpdatedCollection = await newCollection.save();
-    res.status(201).json(UpdatedCollection);
+    return res.status(201).json(UpdatedCollection);
   } catch (error) {
     console.log(error);
     next(error);
