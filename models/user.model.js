@@ -24,6 +24,11 @@ const UserSchema = new Schema(
       trim: true,
     },
 
+    designation: {
+      type: String,
+      trim: true,
+    },
+
     avatar: {
       fileUrl: {
         type: String,
@@ -130,7 +135,7 @@ UserSchema.virtual('fullName').get(function () {
 });
 
 UserSchema.index({ firstName: 'text', lastName: 'text' });
-// userSchema.index({ userName: 'text' });
+UserSchema.index({ designation: 'text' });
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     next();

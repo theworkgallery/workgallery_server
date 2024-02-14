@@ -1,6 +1,7 @@
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
+  console.log('Im here');
   if (
     file?.mimetype?.startsWith('image/') ||
     file?.mimetype?.startsWith('video/')
@@ -20,15 +21,20 @@ const upload = multer({
 
 async function fileUpload(req, res, next) {
   const multerUpload = upload.array('files', 5); // Adjust 'files' and '5' as needed
-  if (req.fileValidationError) {
-    return res.status(400).json({
-      success: false,
-      message: req.fileValidationError,
-    });
-  }
+
   multerUpload(req, res, next, async (err) => {
+    console.log(err);
+
+    if (req.fileValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: req.fileValidationError,
+      });
+    }
+
     if (err instanceof multer.MulterError) {
       // Handle Multer-specific errors
+
       return res.status(500).json({
         success: false,
         message: 'Multer error uploading file',
@@ -43,12 +49,12 @@ async function fileUpload(req, res, next) {
       });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No files uploaded',
-      });
-    }
+    // if (!req.files || req.files.length === 0) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'No files uploaded',
+    //   });
+    // }
 
     // // Process each file
 

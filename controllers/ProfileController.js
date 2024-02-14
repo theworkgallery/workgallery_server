@@ -614,35 +614,42 @@ const DeleteLanguage = async (req, res) => {
 };
 
 const UpdateProfileData = async (req, res, next) => {
-  console.log('here');
-  console.log(req.body);
-  console.log(req?.headers);
-  const { firstName, lastName, about, languages, location, skills } = req.body;
+  console.log(req.body, 'Req.body');
+  const {
+    firstName,
+    lastName,
+    about,
+    languages,
+    location,
+    skills,
+    designation,
+  } = req.body;
   const userId = req.userId;
   let filePath;
   try {
     const FoundUser = await User.findById(req.userId)
       .select('firstName lastName location about avatar')
       .exec();
-    const file = req.files[0];
-    console.log(file);
-    const type = file?.mimetype?.split('/')[0];
+    if (!FoundUser) throw new Error('User not found');
+
+    const file = req?.files[0] || null;
+    console.log(file, 'File');
+    const type = file?.mimetype?.split('/')[0] || null;
     if (file && type == 'image') {
       const getFileName = generateFileName(file.mimetype);
       const fileNameWithKey = 'public/images/' + getFileName;
-      // file.buffer = await sharp(file.buffer)
-      //   .resize({ height: 350, width: 350, fit: 'contain' })
-      //   .toBuffer();
+      file.buffer = await sharp(file.buffer)
+        .resize({ height: 350, width: 350, fit: 'contain' })
+        .toBuffer();
       const { fileLink } = await AwsUploadFile({
         fileBuffer: file.buffer,
         fileName: fileNameWithKey,
         mimeType: type,
       });
-      if (!FoundUser) throw new Error('User not found');
       FoundUser.avatar.fileUrl = fileLink;
       FoundUser.avatar.edited = true;
     }
-    if (!FoundUser) throw new Error('User not found');
+
     let profile = await Profile.findOne({ user: req.userId }).exec();
 
     if (!profile) {
@@ -652,15 +659,16 @@ const UpdateProfileData = async (req, res, next) => {
     }
     if (firstName) FoundUser.firstName = firstName;
     if (lastName) FoundUser.lastName = lastName;
-    if (about) FoundUser.about = about;
+    if (about) FoundUser.about.text = about;
+    if (designation) FoundUser.designation = designation;
 
     if (languages && languages.length > 0) profile.languages.push(...languages);
     if (location) FoundUser.location = location;
     if (skills && skills.length > 0) profile.skills.push(...skills);
+
     await profile.save();
-    const user = await FoundUser.save();
-    console.log(user);
-    return res.status(200).json('updated');
+    await FoundUser.save();
+    return res.status(200).json({ status: true, message: 'updated' });
   } catch (error) {
     console.log(error);
     next(error);
@@ -845,13 +853,13 @@ const UpdateAchievements = async (req, res) => {
 
 const getUserData = async (req, res, next) => {
   const userId = req.userId;
-
   try {
     const userData = await User.findById(userId)
       .select('userName avatar title about firstName lastName')
       .lean()
       .exec();
     if (!userData) return res.status(400).json({ message: 'User not found' });
+    console.log(userData);
     return res.json(userData);
   } catch (err) {
     console.log(err);
@@ -866,19 +874,22 @@ const getFullUserProfile = async (req, res, next) => {
       .select('education experience')
       .lean()
       .exec();
+
     const profileData = await Profile.findOne({ user: userId })
       .select(
         'education experience skills projects certifications achievements languages'
       )
       .lean()
       .exec();
-    profileData.education = [...linkedInData.education];
-    profileData.experience = [...linkedInData.experience];
+    if (linkedInData) {
+      profileData.education = [...linkedInData.education];
+      profileData.experience = [...linkedInData.experience];
+    }
 
-    console.log(profileData, 'ProfileData');
     if (!profileData) {
       return res.status(400).json({ message: 'Profile not found' });
     }
+    console.log(profileData, 'Profile');
     return res.status(200).json(profileData);
   } catch (err) {
     console.log(err);
