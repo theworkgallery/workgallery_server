@@ -30,9 +30,9 @@ App.use(express.json());
 //for handling cookies
 App.use(cookieParser());
 ///api/v1/auth/oauth/google
-App.use('/upload', require('./routes/api/v1/postRoutes'));
+App.use('/api/v1/upload', require('./routes/api/v1/postRoutes'));
 
-App.use('/server-status', (req, res) => {
+App.use('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));

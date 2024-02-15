@@ -6,7 +6,7 @@ const Profile = require('../models/profile.model');
 const dayjs = require('dayjs');
 const duration = require('dayjs/plugin/duration');
 const mongoose = require('mongoose');
-const LinkedIn = require('../models/linkedin.model');
+const LinkedIn = require('../models/linkedIn.model');
 dayjs.extend(duration);
 const { generateFileName } = require('../utils/functions');
 const { AwsUploadFile } = require('../utils/s3');
