@@ -11,8 +11,6 @@ const verifyJwt = async (req, res, next) => {
       return res.status(403).json({ error: 'Forbidden token expired' });
     if (err) return res.status(403).json({ error: 'Forbidden' });
     req.userId = decoded.id;
-    console.log(decoded);
-    // req.roles = checkActive.sub;
     next();
   });
 };
