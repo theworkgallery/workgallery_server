@@ -9,7 +9,8 @@ const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/errorHandler');
 const credentials = require('./middleware/credentials');
 const dbConnection = require('./config/dbConn');
-
+const cookieParser = require('cookie-parser');
+const verifyJwt = require('./middleware/verifyJwt');
 //connect to db
 dbConnection();
 //custom middle ware for req logging
