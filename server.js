@@ -4,14 +4,13 @@ const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3500;
 const App = express();
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
 const { reqLogger } = require('./middleware/eventLogger');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/errorHandler');
 const credentials = require('./middleware/credentials');
 const dbConnection = require('./config/dbConn');
+const cookieParser = require('cookie-parser');
 const verifyJwt = require('./middleware/verifyJwt');
-
 //connect to db
 dbConnection();
 //custom middle ware for req logging
@@ -46,15 +45,6 @@ App.use('/api/v1/collections', require('./routes/api/v1/collectionRoutes'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
-
-// App.all('*', (req, res) => {
-//   res.status(404);
-//   if (req.accepts('json')) {
-//     res.status(404).json({ error: 'File not found' });
-//   } else {
-//     res.send('File not found');
-//   }
-// });
 
 //custom error handler
 

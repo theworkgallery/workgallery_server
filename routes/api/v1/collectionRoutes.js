@@ -29,5 +29,8 @@ router.delete(
   collectionController.removePostFromCollection
 );
 router.get('/:collectionId/posts', collectionController.getPostsByCollection);
-
+router.put(
+  '/:collectionId/gallery',
+  collectionController.AddCollectionToGallery
+);
 module.exports = router;

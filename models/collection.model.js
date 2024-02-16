@@ -8,6 +8,10 @@ const CollectionSchema = new Schema(
       ref: 'User',
       required: true,
     },
+    isGallery: {
+      type: Boolean,
+      default: false,
+    },
     title: {
       type: String,
       required: true,

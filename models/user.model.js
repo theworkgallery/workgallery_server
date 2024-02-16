@@ -27,6 +27,7 @@ const UserSchema = new Schema(
     designation: {
       type: String,
       trim: true,
+      maxlength: 20,
     },
 
     avatar: {
