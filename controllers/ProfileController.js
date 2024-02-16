@@ -630,6 +630,8 @@ const UpdateProfileData = async (req, res, next) => {
     const FoundUser = await User.findById(req.userId)
       .select('firstName lastName location about avatar')
       .exec();
+    console.log(FoundUser, 'Found User ');
+    console.log(req.userId, 'User Id');
     if (!FoundUser) throw new Error('User not found');
 
     const file = req?.files[0] || null;
