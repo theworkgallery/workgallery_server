@@ -28,6 +28,7 @@ App.use(express.json());
 
 //for handling cookies
 App.use(cookieParser());
+
 ///api/v1/auth/oauth/google
 App.use('/api/v1/upload', require('./routes/api/v1/postRoutes'));
 
