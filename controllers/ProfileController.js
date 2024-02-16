@@ -855,7 +855,9 @@ const getUserData = async (req, res, next) => {
   const userId = req.userId;
   try {
     const userData = await User.findById(userId)
-      .select('userName avatar title about firstName lastName')
+      .select(
+        'userName avatar location title about firstName lastName designation'
+      )
       .lean()
       .exec();
     if (!userData) return res.status(400).json({ message: 'User not found' });

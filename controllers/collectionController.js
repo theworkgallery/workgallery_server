@@ -142,7 +142,7 @@ const listCollectionsByUser = async (req, res, next) => {
   let user = userId || req.userId;
   try {
     const collections = await UserCollection.find({ user: user })
-      .select('fileUrl title description')
+      .select('fileUrl title description isGallery')
       .lean()
       .exec();
     console.log(collections);
@@ -250,6 +250,26 @@ const getPostsByCollection = async (req, res, next) => {
   }
 };
 
+const AddCollectionToGallery = async (req, res, next) => {
+  //add collection to gallery
+  const { collectionId } = req.params;
+  try {
+    const foundCollection = await UserCollection.findById(collectionId)
+      .select('isGallery')
+      .exec();
+    console.log(foundCollection);
+    if (!foundCollection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+    foundCollection.isGallery = !foundCollection.isGallery;
+    const UpdatedCollection = await foundCollection.save();
+    return res.status(200).json(UpdatedCollection);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createCollection,
   updateCollection,
@@ -260,4 +280,5 @@ module.exports = {
   removePostFromCollection,
   getPostsByCollection,
   uploadImage,
+  AddCollectionToGallery,
 };
