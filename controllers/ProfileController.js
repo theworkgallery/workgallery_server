@@ -628,7 +628,7 @@ const UpdateProfileData = async (req, res, next) => {
   let filePath;
   try {
     const FoundUser = await User.findById(req.userId)
-      .select('firstName lastName location about avatar')
+      .select('firstName lastName location about avatar designation')
       .exec();
     console.log(FoundUser, 'Found User ');
     console.log(req.userId, 'User Id');
@@ -668,9 +668,13 @@ const UpdateProfileData = async (req, res, next) => {
     if (location) FoundUser.location = location;
     if (skills && skills.length > 0) profile.skills.push(...skills);
 
-    await profile.save();
-    await FoundUser.save();
-    return res.status(200).json({ status: true, message: 'updated' });
+    const updatedProfileData = await profile.save();
+    const updatedUserData = await FoundUser.save();
+    res.status(200).json({
+      profileData: updatedProfileData,
+      updatedUserData: updatedUserData,
+    });
+    // return res.status(200).json({ status: true, message: 'updated' });
   } catch (error) {
     console.log(error);
     next(error);
@@ -845,6 +849,32 @@ const UpdateAchievements = async (req, res) => {
   }
 };
 
+const updateUserTitle = async (req, res, next) => {
+  const { title } = req.body;
+  try {
+    const FoundUser = await User.findById(req.userId).select('title').exec();
+    if (!FoundUser) throw new Error('User not found');
+    FoundUser.title.text = title;
+    FoundUser.title.edited = true;
+    const updatedUserData = await FoundUser.save();
+    return res.status(200).json(updatedUserData);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+const getUserTitle = async (req, res, next) => {
+  try {
+    const FoundUser = await User.findById(req.userId).select('title').exec();
+    if (!FoundUser) throw new Error('User not found');
+    return res.status(200).json(FoundUser.title);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 // const addAvatar = async (req, res, next) => {
 //   try {
 //   } catch (error) {
@@ -925,4 +955,6 @@ module.exports = {
   UpdateCertifications,
   UpdateAchievements,
   UpdateProfileData,
+  getUserTitle,
+  updateUserTitle,
 };
