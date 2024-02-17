@@ -29,10 +29,7 @@ App.use(express.json());
 //for handling cookies
 App.use(cookieParser());
 
-///api/v1/auth/oauth/google
-App.use('/api/v1/upload', require('./routes/api/v1/postRoutes'));
-
-App.use('/api/v1/health', (req, res) => {
+App.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 

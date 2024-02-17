@@ -19,9 +19,9 @@ const educationSchema = new Schema({
   },
   grade: {
     type: String,
-    required: true,
+    required: false,
   },
-  degree: {
+  degreeName: {
     type: String,
     required: true,
   },

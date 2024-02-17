@@ -11,7 +11,7 @@ dayjs.extend(duration);
 const { generateFileName } = require('../utils/functions');
 const { AwsUploadFile } = require('../utils/s3');
 const sharp = require('sharp');
-
+const { StringToArray } = require('../utils/functions');
 /**
  * Retrieves up to 5 public users that the current user is not already following,
  * including their name, avatar, location, and follower count, sorted by the number of followers.
@@ -294,36 +294,47 @@ const getFollowingUsers = async (req, res) => {
 const AddEducation = async (req, res) => {
   const {
     schoolName,
-    degree,
+    degreeName,
     fieldOfStudy,
     startDate,
     endDate,
-    current,
-    skills,
+    current = false,
+    skills = '',
     grade,
   } = req.body;
-
-  if (!schoolName || !degree || !fieldOfStudy || !startDate || !current) {
+  console.log(req.body, 'Data from Education');
+  //  schoolName: 'Svcet',
+  //   degreeName: 'Btech',
+  //   fieldOfStudy: 'CSE',
+  //   startDate: '',
+  //   endDate: '',
+  //   grade: '8.8',
+  //   skills: 'React,Node,Python',
+  const skills2 = StringToArray(skills, 'skill');
+  if (!schoolName || !degreeName || !fieldOfStudy) {
     return res.status(400).json({ message: 'Please fill all the fields' });
   }
   try {
-    const profile = await PROFILE.findOne({ user: req.userId }).select(
+    let profile = await Profile.findOne({ user: req.userId }).select(
       'education'
     );
     if (!profile) {
-      return res.status(400).json({ message: 'Profile not found' });
+      profile = await Profile.create({
+        user: req.userId,
+      });
     }
     profile.education.unshift({
       schoolName,
-      degree,
+      degreeName,
       fieldOfStudy,
       startDate,
       endDate,
       current,
-      skills,
+      skills2,
       grade,
     });
     await profile.save();
+    console.log(profile);
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
@@ -354,7 +365,7 @@ const AddExperience = async (req, res) => {
   }
 
   try {
-    const profile = await PROFILE.findOne({ user: req.userId }).select(
+    const profile = await Profile.findOne({ user: req.userId }).select(
       'experience'
     );
     if (!profile) {
@@ -387,7 +398,7 @@ const AddSkills = async (req, res) => {
       .select('skills');
   }
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -408,7 +419,7 @@ const AddProject = async (req, res) => {
   }
 
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -431,7 +442,7 @@ const AddCertification = async (req, res) => {
   }
 
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -452,7 +463,7 @@ const AddAchievement = async (req, res) => {
     return res.status(400).json({ message: 'Please fill all the fields' });
   }
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -472,7 +483,7 @@ const AddLanguages = async (req, res) => {
     return res.status(400).json({ message: 'language is required' });
   }
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -488,7 +499,7 @@ const AddLanguages = async (req, res) => {
 const DeleteEducation = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -505,7 +516,7 @@ const DeleteEducation = async (req, res) => {
 const DeleteExperience = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -522,7 +533,7 @@ const DeleteExperience = async (req, res) => {
 const DeleteSkills = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -540,7 +551,7 @@ const DeleteSkills = async (req, res) => {
 const DeleteProjects = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -557,7 +568,7 @@ const DeleteProjects = async (req, res) => {
 const DeleteCertifications = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -578,7 +589,7 @@ const DeleteCertifications = async (req, res) => {
 const DeleteAchievements = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -597,7 +608,7 @@ const DeleteAchievements = async (req, res) => {
 const DeleteLanguage = async (req, res) => {
   const { id } = req.params;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -634,7 +645,7 @@ const UpdateProfileData = async (req, res, next) => {
     console.log(req.userId, 'User Id');
     if (!FoundUser) throw new Error('User not found');
 
-    const file = req?.files[0] || null;
+    const file = req.files[0] ? req.files[0] : null;
     console.log(file, 'File');
     const type = file?.mimetype?.split('/')[0] || null;
     if (file && type == 'image') {
@@ -663,17 +674,18 @@ const UpdateProfileData = async (req, res, next) => {
     if (lastName) FoundUser.lastName = lastName;
     if (about) FoundUser.about.text = about;
     if (designation) FoundUser.designation = designation;
+    if (location) FoundUser.location = location;
 
     if (languages && languages.length > 0) profile.languages.push(...languages);
-    if (location) FoundUser.location = location;
+
     if (skills && skills.length > 0) profile.skills.push(...skills);
 
     const updatedProfileData = await profile.save();
     const updatedUserData = await FoundUser.save();
-    res.status(200).json({
-      profileData: updatedProfileData,
-      updatedUserData: updatedUserData,
-    });
+    updatedUserData.skills = updatedProfileData?.skills || [];
+    updatedUserData.languages = updatedProfileData?.languages || [];
+    res.status(200).json(updatedUserData);
+
     // return res.status(200).json({ status: true, message: 'updated' });
   } catch (error) {
     console.log(error);
@@ -695,7 +707,7 @@ const UpdateEducation = async (req, res) => {
   } = req.body;
 
   try {
-    const profile = await PROFILE.findOne({ user: req.userId }).select(
+    const profile = await Profile.findOne({ user: req.userId }).select(
       'education'
     );
 
@@ -740,7 +752,7 @@ const UpdateExperience = async (req, res) => {
     isPublic,
   } = req.body;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId }).select(
+    const profile = await Profile.findOne({ user: req.userId }).select(
       'experience'
     );
     console.log(profile);
@@ -774,7 +786,7 @@ const UpdateSkills = async (req, res) => {
   const { id } = req.params;
   const { skills } = req.body;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -793,7 +805,7 @@ const UpdateProject = async (req, res) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
@@ -813,7 +825,7 @@ const UpdateCertifications = async (req, res) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -834,7 +846,7 @@ const UpdateAchievements = async (req, res) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
-    const profile = await PROFILE.findOne({ user: req.userId });
+    const profile = await Profile.findOne({ user: req.userId });
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -892,9 +904,14 @@ const getUserData = async (req, res, next) => {
       )
       .lean()
       .exec();
+    const profileData = await Profile.findOne({ user: userId }).select(
+      'skills languages'
+    );
+    userData.skills = profileData?.skills || [];
+    userData.languages = profileData?.languages || [];
     if (!userData) return res.status(400).json({ message: 'User not found' });
     console.log(userData);
-    return res.json(userData);
+    return res.status(200).json(userData);
   } catch (err) {
     console.log(err);
     next(err);
@@ -910,14 +927,19 @@ const getFullUserProfile = async (req, res, next) => {
       .exec();
 
     const profileData = await Profile.findOne({ user: userId })
-      .select(
-        'education experience skills projects certifications achievements languages'
-      )
+      .select('education experience  projects certifications achievements')
       .lean()
       .exec();
+    console.log(profileData);
     if (linkedInData) {
-      profileData.education = [...linkedInData.education];
-      profileData.experience = [...linkedInData.experience];
+      profileData.education = [
+        ...profileData.education,
+        ...linkedInData.education,
+      ];
+      profileData.experience = [
+        ...linkedInData.experience,
+        ...linkedInData.experience,
+      ];
     }
 
     if (!profileData) {
