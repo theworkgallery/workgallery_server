@@ -47,6 +47,7 @@ App.use('/api/v1/collections', require('./routes/api/v1/collectionRoutes'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
+App.use('/api/v1/orders', require('./routes/api/v1/orderRoutes'));
 
 //custom error handler
 App.use(errorHandler);
