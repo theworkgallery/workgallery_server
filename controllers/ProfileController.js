@@ -335,7 +335,7 @@ const AddEducation = async (req, res) => {
     });
     await profile.save();
     console.log(profile);
-    return res.status(200).json(profile);
+    return res.status(200).json(profile.education);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: 'Internal server error' });
