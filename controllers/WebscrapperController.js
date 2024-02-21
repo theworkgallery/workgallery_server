@@ -305,7 +305,7 @@ const getGitHubData = async (req, res, next) => {
     }
 
     const GIT_REPOS = await GIT_DB.findOne({ user: id })
-      .select('repos')
+      .select('-repos.forks -repos.stars -repos.readme')
       .lean()
       .exec();
     if (GIT_REPOS) {
