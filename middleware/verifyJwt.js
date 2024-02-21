@@ -9,9 +9,7 @@ const verifyJwt = async (req, res, next) => {
     if (err?.name == 'TokenExpiredError')
       return res.status(403).json({ error: 'Forbidden token expired' });
     if (err) return res.status(403).json({ error: 'Forbidden' });
-    req.user = decoded.id;
-    console.log(decoded);
-    // req.roles = checkActive.sub;
+    req.userId = decoded.id;
     next();
   });
 };

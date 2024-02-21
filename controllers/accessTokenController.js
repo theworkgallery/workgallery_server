@@ -1,7 +1,7 @@
-const User = require('../model/UserModel');
+const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const subRoles = require('../config/roles_list');
-const utils = require('../utils/utils');
+const utils = require('../utils/TokenCreator');
 const verifyAccessTokenCookie = async (req, res) => {
   //extract cookies
   const cookies = req?.cookies;
@@ -10,6 +10,7 @@ const verifyAccessTokenCookie = async (req, res) => {
     return res
       .status(401)
       .json({ error: 'Unauthorized access token not found' });
+
   const accessToken = cookies?.aT;
   console.log(accessToken, 'Access token');
   jwt.verify(
@@ -25,7 +26,10 @@ const verifyAccessTokenCookie = async (req, res) => {
         return res.sendStatus(403);
       }
       console.log(decoded, 'decoded user token');
-      const foundUser = await User.findById(decoded.id).lean().exec();
+      const foundUser = await User.findById(decoded.id)
+        .select('_id userName email')
+        .lean()
+        .exec();
       console.log(foundUser, 'Found user');
       if (!foundUser) return res.sendStatus(403);
       const userId = foundUser._id.toString();
@@ -33,13 +37,15 @@ const verifyAccessTokenCookie = async (req, res) => {
         userId,
         foundUser.subscription
       );
+
       //sending authorization
+
       return res.status(200).json({
         accessToken,
         id: userId,
         userName: foundUser.userName,
         email: foundUser.email,
-        picture: foundUser.picture,
+        // picture: foundUser.picture,
       });
     }
   );

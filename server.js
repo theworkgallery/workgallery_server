@@ -4,14 +4,13 @@ const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3500;
 const App = express();
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
 const { reqLogger } = require('./middleware/eventLogger');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/errorHandler');
 const credentials = require('./middleware/credentials');
 const dbConnection = require('./config/dbConn');
+const cookieParser = require('cookie-parser');
 const verifyJwt = require('./middleware/verifyJwt');
-
 //connect to db
 dbConnection();
 //custom middle ware for req logging
@@ -29,29 +28,24 @@ App.use(express.json());
 
 //for handling cookies
 App.use(cookieParser());
-///api/v1/auth/oauth/google
+
+App.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 App.use('/api/v1/auth', require('./routes/api/v1/auth'));
 App.use('/api/v1', require('./routes/api/v1/refresh'));
-App.use('/api/v1/waitlist', require('./routes/api/v1/waitListRoute'));
 
 App.use(verifyJwt);
 App.use('/api/v1/lobby', require('./routes/api/v1/lobbyRoutes'));
-App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes.js'));
-App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes.js'));
+App.use('/api/v1/post', require('./routes/api/v1/postRoutes'));
+App.use('/api/v1/gallery', require('./routes/api/v1/galleryRoutes'));
+App.use('/api/v1/collections', require('./routes/api/v1/collectionRoutes'));
+App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
-
-App.all('*', (req, res) => {
-  res.status(404);
-  if (req.accepts('json')) {
-    res.status(404).json({ error: 'File not found' });
-  } else {
-    res.send('File not found ');
-  }
-});
-
+App.use('/api/v1/template', require('./routes/api/v1/templateRoutes'));
 //custom error handler
-
 App.use(errorHandler);
 
 mongoose.connection.once('open', () => {

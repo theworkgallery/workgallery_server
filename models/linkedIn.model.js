@@ -7,7 +7,7 @@ const linkedInProfileSchema = new Schema(
       required: false,
       trim: true,
     },
-    profile: {
+    avatar: {
       type: String,
       required: false,
       trim: true,
@@ -34,4 +34,4 @@ const linkedInProfileSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model('linkedInScrappedData', linkedInProfileSchema);
+module.exports = mongoose.model('linkedInProfile', linkedInProfileSchema);
