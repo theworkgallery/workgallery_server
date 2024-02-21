@@ -1,23 +1,48 @@
 const mongoose = require('mongoose');
 
-const templatesModel = new mongoose.Schema(
-{
+const Schema = mongoose.Schema;
+// const { AwsDeleteFile } = require('../utils/s3');
+// const bucketName = process.env.AWS_BUCKET_NAME;
+const TemplateSchema = new Schema(
+  {
+    templateHtml: String,
+    Price: {
+      type: Number,
+      default: 0,
+    },
     basePrice: {
-        type: Number,
-        required: true
+      type: Number,
+      default: 0,
     },
-    createdBy: {
+    templateName: String,
+    previewUrl: String,
+    key: String,
+    likes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+        ref: 'User',
+      },
+    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
-    type: {
-        type: String,
-        required: true
-    }
-},
-{ 
-    timestamps: true 
-});
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = mongoose.model('Templates', templatesModel);
+// TemplateSchema.pre('remove', async function (next) {
+//   try {
+//     if (this.fileUrl) {
+//       await AwsDeleteFile({ FileName: this.key, bucket_name: bucketName });
+//     }
+//     next();
+//   } catch (err) {
+//     next(err);
+//   }
+// });
+
+module.exports = mongoose.model('Template', TemplateSchema);

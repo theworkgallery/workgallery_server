@@ -23,6 +23,10 @@ const postSchema = new Schema({
     title: String,
     description: String,
     fileUrl: String,
+    isModified: {
+      type: Boolean,
+      default: false,
+    },
   },
 });
 const MediumScrappingSchema = new Schema(

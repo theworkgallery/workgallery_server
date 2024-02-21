@@ -29,10 +29,7 @@ App.use(express.json());
 //for handling cookies
 App.use(cookieParser());
 
-///api/v1/auth/oauth/google
-App.use('/api/v1/upload', require('./routes/api/v1/postRoutes'));
-
-App.use('/api/v1/health', (req, res) => {
+App.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -47,8 +44,9 @@ App.use('/api/v1/collections', require('./routes/api/v1/collectionRoutes'));
 App.use('/api/v1/scrapping', require('./routes/api/v1/webScrappingRoutes'));
 App.use('/api/v1/users', require('./routes/api/v1/userRoutes'));
 App.use('/api/v1/profile', require('./routes/api/v1/profileRoutes'));
-App.use('/api/v1/orders', require('./routes/api/v1/orderRoutes'));
+App.use('/api/v1/template', require('./routes/api/v1/templateRoutes'));
 
+App.use('/api/v1/orders', require('./routes/api/v1/orderRoutes'));
 //custom error handler
 App.use(errorHandler);
 

@@ -4,6 +4,17 @@ const generateFileName = (mimeType, bytes = 32) => {
   return crypto.randomBytes(bytes).toString('hex') + '.' + extension;
 };
 
+const StringToArray = (str, key) => {
+  if (!str) return [];
+  if (!key || typeof key !== 'string') return [];
+  return str
+    .toString()
+    .split(',')
+    .map((val) => ({
+      [key]: val.trim(),
+    }));
+};
+
 const ArrayFilter = ({
   arr = [],
   property,
@@ -22,4 +33,5 @@ const ArrayFilter = ({
 module.exports = {
   ArrayFilter,
   generateFileName,
+  StringToArray,
 };

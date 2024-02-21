@@ -29,11 +29,12 @@ Router.get('/user', profileController.getFullUserProfile);
 
 // Router.post('/avatar', fileUpload, profileController.addAvatar);
 Router.post('/add/education', profileController.AddEducation);
+
 Router.post('/add/experience', profileController.AddExperience);
 Router.post('/add/skills', profileController.AddSkills);
 Router.post('/add/project', profileController.AddProject);
 Router.post('/add/achievement', profileController.AddAchievement);
-Router.post('/add/Certificate', profileController.AddCertification);
+Router.post('/add/certificate', profileController.AddCertification);
 Router.post('/add/languages', profileController.AddLanguages);
 
 Router.delete('/delete/education', profileController.DeleteEducation);
