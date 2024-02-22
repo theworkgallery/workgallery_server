@@ -16,6 +16,7 @@ async function handlePayment(req,res){
     console.info("Handling payment for user: " + userId);
 
     const reqBody = req.body;
+    reqBody.userId = userId;
 
     let paymentDetails = await orderService.processPayment(reqBody);
 

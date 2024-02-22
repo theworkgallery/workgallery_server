@@ -114,6 +114,10 @@ const UserSchema = new Schema(
       type: String,
       trim: true,
     },
+    stripeId:{
+      type: String,
+      default: null
+    }
     // activationToken: {
     //   type: String,
     //   default: null,

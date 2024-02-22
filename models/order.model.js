@@ -7,6 +7,11 @@ const orderModel = new mongoose.Schema(
             ref: "User",
             required: true
         },
+        templateId:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Template",
+            required: true
+        },
         orderId: {
             type: String,
             required: true
