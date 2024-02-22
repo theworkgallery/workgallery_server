@@ -7,6 +7,5 @@ Router.get('/', lobbyController.getLobbyPosts)
   // .delete('/:id', lobbyController.deleteLobbyPost)
   .post('/', createPost);
 Router.get('/git', lobbyController.getGitHubRepos);
-Router.get('/template', lobbyController.getTemplateData);
 Router.patch('/update/:id', lobbyController.pushToGallery);
 module.exports = Router;
