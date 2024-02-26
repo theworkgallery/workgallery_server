@@ -9,17 +9,21 @@ const getAllTemplates = async (req, res, next) => {
     const templates = await Template.find().select(
       'basePrice templateName previewUrl createdBy'
     );
+    console.log(templates);
     if (!templates) return res.json({ message: 'No templates found' });
     res.status(200).json(templates);
   } catch (error) {
     console.log(error);
-    next(err);
+    next(error);
   }
 };
-const AddTemplate = async (req, res, next) => {
+const createTemplate = async (req, res, next) => {
   try {
-    const { templateHtml, basePrice } = req.body;
-    const file = req?.files[0] || null;
+    const { templateHtml, basePrice, templateName } = req.body;
+    console.log(req?.files, 'Req.files');
+    const file = req?.files ? req.files[0] : null;
+    if (!file) throw new Error('Preview is required');
+
     const type = file?.mimetype?.split('/')[0] || null;
     console.log(file);
     const { fileLink, fileNameWithKey, error } = await uploadImage({
@@ -27,25 +31,31 @@ const AddTemplate = async (req, res, next) => {
       file,
     });
     if (error) throw new Error(error);
-    const newTemplate = Template.create({
+    const newTemplate = new Template({
       templateHtml,
       previewUrl: fileLink,
       key: fileNameWithKey,
       basePrice,
+      templateName,
       createdBy: req.userId,
     });
     await newTemplate.save();
-    res.status(201).json(newTemplate);
+    res.status(201).json({ message: 'Template has been added' });
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
 
-const getTemplateById = async () => {
+const getTemplateById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const template = await Template.findById(id);
+    console.log(id, 'template id');
+    const template = await Template.findById(id)
+      .select('templateHtml')
+      .lean()
+      .exec();
+    console.log(template);
     if (!template) return res.json({ message: 'No template found' });
     res.status(200).json(template);
   } catch (error) {
@@ -142,6 +152,6 @@ const getAllGalleryData = async (req, res, next) => {
 module.exports = {
   getAllGalleryData,
   getAllTemplates,
-  AddTemplate,
+  createTemplate,
   getTemplateById,
 };
