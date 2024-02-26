@@ -112,6 +112,21 @@ const saveOrUnsavePost = async (req, res, operation) => {
 };
 
 /**
+ * @route GET /posts
+ */
+const getUserPosts = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    //send all the posts of a user
+    const postsOfUser = await Post.find({ user: userId}).lean().exec();
+    console.log(postsOfUser, 'postsOfUser');
+    res.status(200).json(postsOfUser);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+/**
  * @route GET /posts/saved
  */
 const getSavedPosts = async (req, res) => {
@@ -821,4 +836,5 @@ module.exports = {
   getPublicPosts,
   getFollowingUsersPosts,
   updatePost,
+  getUserPosts,
 };

@@ -19,6 +19,7 @@ const {
   getSavedPosts,
   clearPendingPosts,
   updatePost,
+  getUserPosts,
 } = require('../../../controllers/postController');
 const {
   postValidator,
@@ -31,6 +32,7 @@ const {
   likeSaveLimiter,
   commentLimiter,
 } = require('../../../middleware/limiter/limiter');
+
 //Next version
 // const analyzeContent = require('../../services/analyzeContent');
 // const processPost = require('../../../services/processPost');
@@ -42,6 +44,7 @@ router.get('/:publicUserId/userPosts', getPublicPosts);
 router.get('/:id/following', getFollowingUsersPosts);
 
 router.get('/:id', getPost);
+router.get('/posts', getUserPosts);
 router.get('/', getHomeFeed);
 
 // router.delete('/pending', clearPendingPosts);

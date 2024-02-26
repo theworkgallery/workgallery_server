@@ -8,6 +8,7 @@ const GIT_DB = require('../models/github.model');
 const SocialProfile = require('../models/socials.model');
 const UserCollection = require('../models/collection.model');
 const User = require('../models/user.model');
+const Post = require('../models/post.model');
 const { ArrayFilter } = require('../utils/functions');
 const { AwsUploadFile } = require('../utils/s3');
 const { uploadImage } = require('./collectionController');
@@ -527,6 +528,18 @@ const getAllSocialProfiles = async (req, res, next) => {
       .map((key) => {
         return { platform: key, username: profile[key] };
       });
+      console.log(userId, 'userId');
+    try {
+      const postsData = await Post.findOne({user: userId}).select('_id').lean().exec();
+      console.log(postsData, 'postsData');
+      if (postsData) {
+        platformsArray.push({ platform: 'Manual', username: 'Manual' });
+      }
+      console.log(platformsArray, 'platformsArray');
+    } catch (error) {
+      console.log(error, 'Error in getSavedPosts');
+    }
+    console.log(platformsArray, 'platformsArray');  
     return res.json(platformsArray);
   } catch (err) {
     console.log(err);

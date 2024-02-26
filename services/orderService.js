@@ -1,6 +1,6 @@
 const templateRepository = require('../repository/templateRepository');
 const userRepository = require('../repository/userRepository');
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.VITE_STRIPE_SECRET_KEY);
 
 async function processOrder(orderRequest) {
     let response = {};
@@ -12,7 +12,6 @@ async function processOrder(orderRequest) {
     const template = await templateRepository.findTemplateById(orderRequest.templateId);
     
     if (template) {
-
         /*Get user details*/
         let userInfo = await userRepository.findUserById_ProjectStripeDetails(orderRequest.userId);
 
