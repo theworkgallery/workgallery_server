@@ -1,6 +1,8 @@
+const {getUserPosts} = require('../../../controllers/PostController');
 const Router = require('express').Router();
 const fileUpload = require('../../../middleware/post/fileUpload');
 const webScrappingController = require('../../../controllers/WebscrapperController');
+
 Router.put(
   '/update/github/:id',
   fileUpload,
@@ -8,6 +10,7 @@ Router.put(
 );
 Router.get('/github/', webScrappingController.getGitHubData);
 Router.get('/medium/', webScrappingController.getMediumData);
+Router.get('/manual/', getUserPosts);
 Router.get('/linkedin/', webScrappingController.getLinkedInData);
 Router.post('/new', webScrappingController.AddSocialPlatforms);
 Router.get('/', webScrappingController.getAllSocialProfiles);
