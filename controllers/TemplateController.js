@@ -1,6 +1,7 @@
 const Template = require('../models/template.model');
 const { uploadImage } = require('./collectionController');
 const GitHub = require('../models/github.model');
+const TemplateUserMap = require('../models/TemplateUsers.model');
 const mongoose = require('mongoose');
 const Medium = require('../models/medium.model');
 const User = require('../models/user.model');
@@ -149,9 +150,87 @@ const getAllGalleryData = async (req, res, next) => {
   }
 };
 
+const addToGallery = async (req, res, next) => {
+  try {
+    const { target } = req.body;
+    if (!target) {
+      return res
+        .status(400)
+        .json({ message: 'Template ID is required', status: false });
+    }
+
+    // Check for duplicates
+    const existingMap = await TemplateUserMap.findOne({
+      templateId: target,
+      user: req.userId,
+    });
+    if (existingMap) {
+      return res
+        .status(409)
+        .json({ message: 'Template already added to gallery', status: false });
+    }
+
+    const newTemplateUserMap = new TemplateUserMap({
+      templateId: target,
+      user: req.userId,
+    });
+    await newTemplateUserMap.save();
+    res
+      .status(201)
+      .json({ message: 'Template added to gallery', status: true });
+  } catch (err) {
+    console.error(err); // Consider a more sophisticated logging approach
+    next(err);
+  }
+};
+
+const getAllTemplatesOfUser = async (req, res, next) => {
+  try {
+    const templates = await TemplateUserMap.find({ user: req.userId })
+      .populate('templateId') // Assuming you want only these fields
+      .exec(); // Explicitly executing the query
+    console.log(templates);
+    if (!templates.length) {
+      return res
+        .status(404)
+        .json({ message: 'No templates found for this user' });
+    }
+
+    res.json(templates);
+  } catch (err) {
+    console.error(err); // Consider using a more sophisticated logging approach
+    next(err);
+  }
+};
+
+const getTemplateStatusOfUser = async (req, res, next) => {
+  try {
+    const { target } = req.params; // or req.body, depending on how the template ID is being sent
+
+    if (!target) {
+      // If 'target' is not provided, return a bad request response
+      throw new Error('Template ID is required.');
+    }
+
+    // Use .exists() to check if any document matches the criteria
+    const exists = await TemplateUserMap.exists({
+      templateId: target,
+      user: req.userId,
+    });
+
+    res.status(200).json({ status: !!exists }); // Convert the result to a boolean and return
+  } catch (err) {
+    console.error(err); // Consider using a more sophisticated logging strategy for production
+    next(err); // Pass the error to the next error handling middleware
+  }
+};
+
 module.exports = {
   getAllGalleryData,
   getAllTemplates,
   createTemplate,
   getTemplateById,
+  addToGallery,
+  getAllTemplatesOfUser,
+  getTemplateStatusOfUser,
 };

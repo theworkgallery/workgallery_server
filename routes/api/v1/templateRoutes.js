@@ -16,5 +16,10 @@ Router.post(
   FIleUpload,
   TemplateController.createTemplate
 );
+
+Router.post('/addtogallery', TemplateController.addToGallery);
+Router.get('/status/:target', TemplateController.getTemplateStatusOfUser);
+Router.get('/gallery', TemplateController.getAllTemplatesOfUser);
 Router.get('/:id', TemplateController.getTemplateById);
+
 module.exports = Router;
