@@ -651,9 +651,6 @@ const UpdateProfileData = async (req, res, next) => {
     if (file && type == 'image') {
       const getFileName = generateFileName(file.mimetype);
       const fileNameWithKey = 'public/images/' + getFileName;
-      file.buffer = await sharp(file.buffer)
-        .resize({ height: 350, width: 350, fit: 'contain' })
-        .toBuffer();
       const { fileLink } = await AwsUploadFile({
         fileBuffer: file.buffer,
         fileName: fileNameWithKey,
@@ -676,9 +673,26 @@ const UpdateProfileData = async (req, res, next) => {
     if (designation) FoundUser.designation = designation;
     if (location) FoundUser.location = location;
 
-    if (languages && languages.length > 0) profile.languages.push(...languages);
+    if (languages && languages.length > 0) {
+      const existingLanguages = profile.languages.map((langObj) =>
+        langObj.language.toLowerCase()
+      );
+      const newUniqueLanguages = languages.filter(
+        (newLang) => !existingLanguages.includes(newLang.language.toLowerCase())
+      );
+      profile.skills.push(...newUniqueLanguages);
+    }
 
-    if (skills && skills.length > 0) profile.skills.push(...skills);
+    if (skills && skills.length > 0) {
+      const existingSkillsLower = profile.skills.map((skillObj) =>
+        skillObj.skill.toLowerCase()
+      );
+      const newUniqueSkills = skills.filter(
+        (newSkill) =>
+          !existingSkillsLower.includes(newSkill.skill.toLowerCase())
+      );
+      profile.skills.push(...newUniqueSkills);
+    }
 
     const updatedProfileData = await profile.save();
     const updatedUserData = await FoundUser.save();
