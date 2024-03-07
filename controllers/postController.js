@@ -118,7 +118,7 @@ const getUserPosts = async (req, res, next) => {
   try {
     const userId = req.userId;
     //send all the posts of a user
-    const postsOfUser = await Post.find({ user: userId}).lean().exec();
+    const postsOfUser = await Post.find({ user: userId }).lean().exec();
     console.log(postsOfUser, 'postsOfUser');
     res.status(200).json(postsOfUser);
   } catch (error) {
@@ -399,11 +399,11 @@ const createPost = async (req, res) => {
       const fileNameWithKey = file.mimetype.startsWith('video/')
         ? 'public/videos/' + getFileName
         : 'public/images/' + getFileName;
-      if (file.mimetype.startsWith('image/')) {
-        file.buffer = await sharp(file.buffer)
-          .resize({ height: 600, width: 500, fit: 'contain' })
-          .toBuffer();
-      }
+      // if (file.mimetype.startsWith('image/')) {
+      //   // file.buffer = await sharp(file.buffer)
+      //   //   .resize({ height: 600, width: 500, fit: 'contain' })
+      //   //   .toBuffer();
+      // }
 
       const { fileLink } = await AwsUploadFile({
         fileBuffer: file.buffer,

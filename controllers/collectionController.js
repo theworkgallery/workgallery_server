@@ -164,11 +164,11 @@ const addPostToCollection = async (req, res, next) => {
       const fileNameWithKey = file.mimetype.startsWith('video/')
         ? 'public/videos/' + getFileName
         : 'public/images/' + getFileName;
-      if (file.mimetype.startsWith('image/')) {
-        file.buffer = await sharp(file.buffer)
-          .resize({ height: 600, width: 500, fit: 'contain' })
-          .toBuffer();
-      }
+      // if (file.mimetype.startsWith('image/')) {
+      //   // file.buffer = await sharp(file.buffer)
+      //   //   .resize({ height: 600, width: 500, fit: 'contain' })
+      //   //   .toBuffer();
+      // }
       const { fileLink } = await AwsUploadFile({
         fileBuffer: file.buffer,
         fileName: fileNameWithKey,
