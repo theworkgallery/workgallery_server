@@ -18,7 +18,7 @@ const { StringToArray } = require('../utils/functions');
  *
  * @route GET /users/public-users
  */
-const getPublicUsers = async (req, res) => {
+const getPublicUsers = async (req, res, next) => {
   try {
     const userId = req.userId;
 
@@ -72,7 +72,7 @@ const getPublicUsers = async (req, res) => {
 
     res.status(200).json(usersToDisplay);
   } catch (error) {
-    res.status(500).json({ message: 'An error occurred' });
+    next(error);
   }
 };
 
@@ -90,7 +90,7 @@ const getPublicUsers = async (req, res) => {
  * whether the current user is following the user, the date the current user started following the user,
  * the number of posts the user has created in the last 30 days, and common communities between the current user and the user.
  */
-const getPublicUser = async (req, res) => {
+const getPublicUser = async (req, res, next) => {
   try {
     const currentUserId = req.userId;
     const id = req.params.id;
@@ -160,9 +160,7 @@ const getPublicUser = async (req, res) => {
 
     res.status(200).json(responseData);
   } catch (error) {
-    res.status(500).json({
-      message: 'Some error occurred while retrieving the user',
-    });
+    next(error);
   }
 };
 
@@ -171,7 +169,7 @@ const getPublicUser = async (req, res) => {
  * @param {string} req.userId - The ID of the current user.
  * @param {string} req.params.id - The ID of the user to follow.
  */
-const followUser = async (req, res) => {
+const followUser = async (req, res, next) => {
   try {
     const followerId = req.userId;
     const followingId = req.params.id;
@@ -206,9 +204,7 @@ const followUser = async (req, res) => {
       message: 'User followed successfully',
     });
   } catch (error) {
-    res.status(500).json({
-      message: 'Some error occurred while following the user',
-    });
+    next(error);
   }
 };
 
@@ -217,7 +213,7 @@ const followUser = async (req, res) => {
  * @param {string} req.userId - The ID of the current user.
  * @param {string} req.params.id - The ID of the user to unfollow.
  */
-const unfollowUser = async (req, res) => {
+const unfollowUser = async (req, res, next) => {
   try {
     const followerId = req.userId;
 
@@ -255,9 +251,7 @@ const unfollowUser = async (req, res) => {
       message: 'User unfollowed successfully',
     });
   } catch (error) {
-    res.status(500).json({
-      message: 'Some error occurred while unfollowing the user',
-    });
+    next(error);
   }
 };
 
@@ -269,7 +263,7 @@ const unfollowUser = async (req, res) => {
  *
  * @param {string} req.userId - The ID of the current user.
  */
-const getFollowingUsers = async (req, res) => {
+const getFollowingUsers = async (req, res, next) => {
   try {
     const relationships = await Relationship.find({
       follower: req.userId,
@@ -286,12 +280,10 @@ const getFollowingUsers = async (req, res) => {
 
     res.status(200).json(followingUsers);
   } catch (error) {
-    res.status(500).json({
-      message: 'Some error occurred while retrieving the following users',
-    });
+    next(error);
   }
 };
-const AddEducation = async (req, res) => {
+const AddEducation = async (req, res, next) => {
   const {
     schoolName,
     degreeName,
@@ -338,57 +330,41 @@ const AddEducation = async (req, res) => {
     return res.status(200).json(profile.education);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const AddExperience = async (req, res) => {
-  const {
-    role,
-    companyName,
-    skills,
-    startDate,
-    endDate,
-    current,
-    description,
-  } = req.body;
-  console.log(role, companyName, skills, startDate, current, description);
-  if (
-    !role ||
-    !companyName ||
-    !skills ||
-    !startDate ||
-    !current ||
-    !description
-  ) {
-    return res.status(400).json({ message: 'Please fill all the fields' });
-  }
-
+const AddExperience = async (req, res, next) => {
   try {
+    const { role, companyName, skills, startDate, endDate, description } =
+      req.body;
+    console.log(role, companyName, startDate, endDate, description);
+    if (!role || !companyName || !startDate) {
+      throw new Error('All fields must be filled in');
+    }
     const profile = await Profile.findOne({ user: req.userId }).select(
       'experience'
     );
+
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
     profile.experience.unshift({
       role,
       companyName,
-      skills,
       startDate,
-      current,
+      endDate,
       description,
       endDate,
     });
     await profile.save();
     return res.status(200).json(profile);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+  } catch (err) {
+    next(err);
   }
 };
 
-const AddSkills = async (req, res) => {
+const AddSkills = async (req, res, next) => {
   const { skills } = req.body;
   console.log(skills);
   if (!skills) {
@@ -399,6 +375,8 @@ const AddSkills = async (req, res) => {
   }
   try {
     const profile = await Profile.findOne({ user: req.userId });
+    console.log(profile, 'profile');
+
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -408,11 +386,11 @@ const AddSkills = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const AddProject = async (req, res) => {
+const AddProject = async (req, res, next) => {
   const { title, description, link } = req.body;
   if (!title || !description || !link) {
     return res.status(400).json({ message: 'Please fill all the fields' });
@@ -430,41 +408,40 @@ const AddProject = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const AddCertification = async (req, res) => {
-  const { title, description, link } = req.body;
-
-  if (!title || !description || !link) {
-    return res.status(400).json({ message: 'Please fill all the fields' });
-  }
-
+const AddCertification = async (req, res, next) => {
   try {
+    const { title, link, issuer, issuedDate } = req.body;
+
+    console.log(title, link, issuer, issuedDate, 'Body data');
+    if (!title || !link) {
+      return res.status(400).json({ message: 'Please fill all the fields' });
+    }
     const profile = await Profile.findOne({ user: req.userId });
 
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
-    profile.certifications.unshift({ title, description, link });
+    profile.certifications.unshift({ title, issuer, link, issuedDate });
     await profile.save();
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const AddAchievement = async (req, res) => {
-  const { title, description, link } = req.body;
-
-  if (!title || !description) {
-    return res.status(400).json({ message: 'Please fill all the fields' });
-  }
+const AddAchievement = async (req, res, next) => {
   try {
+    const { title, description, link, issuedDate } = req.body;
+    console.log(req.body);
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Please fill all the fields' });
+    }
     const profile = await Profile.findOne({ user: req.userId });
-
     if (!profile) {
       return res.status(400).json({ message: 'Profile not found' });
     }
@@ -473,11 +450,11 @@ const AddAchievement = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const AddLanguages = async (req, res) => {
+const AddLanguages = async (req, res, next) => {
   const { languages } = req.body;
   if (!languages) {
     return res.status(400).json({ message: 'language is required' });
@@ -492,11 +469,11 @@ const AddLanguages = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteEducation = async (req, res) => {
+const DeleteEducation = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -509,11 +486,11 @@ const DeleteEducation = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteExperience = async (req, res) => {
+const DeleteExperience = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -526,11 +503,11 @@ const DeleteExperience = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteSkills = async (req, res) => {
+const DeleteSkills = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -544,11 +521,11 @@ const DeleteSkills = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteProjects = async (req, res) => {
+const DeleteProjects = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -561,11 +538,11 @@ const DeleteProjects = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteCertifications = async (req, res) => {
+const DeleteCertifications = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -582,11 +559,11 @@ const DeleteCertifications = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteAchievements = async (req, res) => {
+const DeleteAchievements = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -601,11 +578,11 @@ const DeleteAchievements = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const DeleteLanguage = async (req, res) => {
+const DeleteLanguage = async (req, res, next) => {
   const { id } = req.params;
   try {
     const profile = await Profile.findOne({ user: req.userId });
@@ -620,7 +597,7 @@ const DeleteLanguage = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
@@ -707,7 +684,7 @@ const UpdateProfileData = async (req, res, next) => {
   }
 };
 
-const UpdateEducation = async (req, res) => {
+const UpdateEducation = async (req, res, next) => {
   const {
     id,
     schoolName,
@@ -749,11 +726,11 @@ const UpdateEducation = async (req, res) => {
     return res.status(200).json(profile.education);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const UpdateExperience = async (req, res) => {
+const UpdateExperience = async (req, res, next) => {
   const {
     id,
     role,
@@ -792,11 +769,11 @@ const UpdateExperience = async (req, res) => {
     return res.status(200).json(profile.experience);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const UpdateSkills = async (req, res) => {
+const UpdateSkills = async (req, res, next) => {
   const { id } = req.params;
   const { skills } = req.body;
   try {
@@ -811,11 +788,11 @@ const UpdateSkills = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const UpdateProject = async (req, res) => {
+const UpdateProject = async (req, res, next) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
@@ -831,11 +808,11 @@ const UpdateProject = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const UpdateCertifications = async (req, res) => {
+const UpdateCertifications = async (req, res, next) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
@@ -852,11 +829,11 @@ const UpdateCertifications = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
-const UpdateAchievements = async (req, res) => {
+const UpdateAchievements = async (req, res, next) => {
   const { id } = req.params;
   const { title, description, link } = req.body;
   try {
@@ -871,7 +848,7 @@ const UpdateAchievements = async (req, res) => {
     return res.status(200).json(profile);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 };
 
@@ -941,7 +918,7 @@ const getFullUserProfile = async (req, res, next) => {
       .exec();
 
     const profileData = await Profile.findOne({ user: userId })
-      .select('education experience  projects certifications achievements')
+      .select('education experience projects certifications achievements')
       .lean()
       .exec();
     console.log(profileData);
@@ -951,7 +928,7 @@ const getFullUserProfile = async (req, res, next) => {
         ...linkedInData.education,
       ];
       profileData.experience = [
-        ...linkedInData.experience,
+        ...profileData.experience,
         ...linkedInData.experience,
       ];
     }

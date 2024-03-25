@@ -252,7 +252,7 @@ const unlikePost = async (req, res) => {
     res.status(200).json(formattedPost);
   } catch (error) {
     res.status(500).json({
-      message: 'Error unliking post',
+      message: 'Error un liking post',
     });
   }
 };
@@ -399,6 +399,7 @@ const createPost = async (req, res) => {
       const fileNameWithKey = file.mimetype.startsWith('video/')
         ? 'public/videos/' + getFileName
         : 'public/images/' + getFileName;
+
       // if (file.mimetype.startsWith('image/')) {
       //   // file.buffer = await sharp(file.buffer)
       //   //   .resize({ height: 600, width: 500, fit: 'contain' })

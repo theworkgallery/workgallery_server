@@ -50,10 +50,6 @@ const educationSchema = new Schema({
 
 const experienceSchema = new Schema(
   {
-    companyName: {
-      type: String,
-      required: true,
-    },
     picture: {
       type: String,
       required: false,
@@ -137,10 +133,14 @@ const certificationsSchema = new Schema({
     type: String,
     required: true,
   },
-  description: {
+  issuer: {
     type: String,
-    required: false,
+    required: true,
   },
+  issuedDate: {
+    type: Date,
+  },
+
   isPublic: {
     type: Boolean,
     default: true,
@@ -160,6 +160,7 @@ const achievementsSchema = new Schema({
     type: String,
     required: false,
   },
+
   isPublic: {
     type: Boolean,
     default: true,
